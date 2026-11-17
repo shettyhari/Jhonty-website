@@ -11,6 +11,41 @@ export type ViewMode = 'home' | 'pdp' | 'stores' | 'checkout' | 'tracking' | 'ad
 export type DeliveryMode = 'home' | 'pickup';
 export type PaymentMode = 'upi' | 'card' | 'netbanking' | 'cod';
 
+export type StaffRole = 'admin' | 'team';
+
+export type StaffPermission =
+  | 'manage_inventory'
+  | 'manage_catalog'
+  | 'manage_orders'
+  | 'manage_stores'
+  | 'manage_users';
+
+export type StoreScope =
+  | 'All Stores'
+  | 'Hitech City Metro'
+  | 'Venkata Ramana Colony'
+  | 'Kukatpally Hub';
+
+export interface StaffUser {
+  id: string;
+  fullName: string;
+  username: string;
+  password: string;
+  role: StaffRole;
+  assignedStore: StoreScope;
+  permissions: StaffPermission[];
+  active: boolean;
+  createdAt: string;
+  createdBy?: string;
+}
+
+export type PublicStaffUser = Omit<StaffUser, 'password'>;
+
+export interface AdminSession {
+  user: PublicStaffUser;
+  token: string;
+}
+
 export interface Product {
   id: number;
   sku: string;

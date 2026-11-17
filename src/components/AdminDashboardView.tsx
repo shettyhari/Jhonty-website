@@ -1,32 +1,68 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
   Boxes,
   CheckCircle2,
   Edit3,
+  KeyRound,
+  LogOut,
   MapPin,
+  Moon,
   Package,
   Plus,
   RefreshCw,
   Search,
+  Shield,
   ShoppingBag,
+  Sun,
   Trash2,
+  UserPlus,
+  Users,
   X,
 } from 'lucide-react';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSION_DEFINITIONS,
+  STORE_SCOPES,
+} from '../data/adminUsers';
 import { STORES_DATA, formatINR } from '../data/catalog';
 import { OrderTrackingRecord } from '../data/tracking';
-import { Category, Occasion, Product } from '../types';
+import {
+  Category,
+  Occasion,
+  Product,
+  PublicStaffUser,
+  StaffPermission,
+  StaffRole,
+  StoreScope,
+} from '../types';
+import { BrandLogo } from './BrandLogo';
 import { ResilientImage } from './ResilientImage';
 
-type AdminTab = 'inventory' | 'catalog' | 'orders' | 'stores';
+type AdminTab = 'inventory' | 'catalog' | 'orders' | 'stores' | 'users';
 type StockFilter = 'all' | 'in' | 'low' | 'out';
 
+interface UserPayloadInput {
+  fullName: string;
+  username: string;
+  password?: string;
+  role: StaffRole;
+  assignedStore: StoreScope;
+  permissions: StaffPermission[];
+  active: boolean;
+}
+
 interface AdminDashboardViewProps {
+  theme: 'light' | 'dark';
+  currentUser: PublicStaffUser;
+  staffUsers: PublicStaffUser[];
   products: Product[];
   orders: OrderTrackingRecord[];
   isLoading: boolean;
   isBusy: boolean;
+  onToggleTheme: () => void;
+  onLogout: () => void;
   onCreateProduct: (payload: Partial<Product>) => Promise<boolean>;
   onUpdateProduct: (id: number, patch: Partial<Product>) => Promise<boolean>;
   onRestockProduct: (
@@ -36,6 +72,12 @@ interface AdminDashboardViewProps {
   onRefreshInventory: (minPerSize?: number) => Promise<void>;
   onDeleteProduct: (id: number) => Promise<void>;
   onUpdateOrderStatus: (orderId: string, status: OrderTrackingRecord['status']) => Promise<void>;
+  onCreateStaffUser: (payload: UserPayloadInput) => Promise<{ ok: boolean; error?: string }>;
+  onUpdateStaffUser: (
+    id: string,
+    patch: Partial<UserPayloadInput>
+  ) => Promise<{ ok: boolean; error?: string }>;
+  onDeleteStaffUser: (id: string) => Promise<void>;
   onTrackOrder: (orderId: string) => void;
   onOpenProduct: (id: number) => void;
   onBackToStore: () => void;
@@ -126,26 +168,126 @@ const EMPTY_FORM: ProductFormState = {
   image: IMAGE_PRESETS[0].path,
 };
 
+interface UserFormState {
+  id?: string;
+  fullName: string;
+  username: string;
+  password: string;
+  role: StaffRole;
+  assignedStore: StoreScope;
+  permissions: StaffPermission[];
+  active: boolean;
+}
+
+const EMPTY_USER_FORM: UserFormState = {
+  fullName: '',
+  username: '',
+  password: '',
+  role: 'team',
+  assignedStore: 'Hitech City Metro',
+  permissions: [...DEFAULT_ROLE_PERMISSIONS.team],
+  active: true,
+};
+
 export function AdminDashboardView({
+  theme,
+  currentUser,
+  staffUsers,
   products,
   orders,
   isLoading,
   isBusy,
+  onToggleTheme,
+  onLogout,
   onCreateProduct,
   onUpdateProduct,
   onRestockProduct,
   onRefreshInventory,
   onDeleteProduct,
   onUpdateOrderStatus,
+  onCreateStaffUser,
+  onUpdateStaffUser,
+  onDeleteStaffUser,
   onTrackOrder,
   onOpenProduct,
   onBackToStore,
 }: AdminDashboardViewProps) {
-  const [activeTab, setActiveTab] = useState<AdminTab>('inventory');
+  const canInventory = currentUser.permissions.includes('manage_inventory');
+  const canCatalog = currentUser.permissions.includes('manage_catalog');
+  const canOrders = currentUser.permissions.includes('manage_orders');
+  const canStores = currentUser.permissions.includes('manage_stores');
+  const canUsers = currentUser.permissions.includes('manage_users');
+
+  const isStoreScoped = currentUser.assignedStore !== 'All Stores';
+
+  const navItems = useMemo(() => {
+    const items: { id: AdminTab; label: string; icon: typeof Boxes; count?: number }[] = [];
+    const visibleProducts = isStoreScoped
+      ? products.filter((p) => p.storeLocation === currentUser.assignedStore)
+      : products;
+    const alertCount = visibleProducts.filter((p) => p.stock <= p.reorderLevel).length;
+
+    if (canInventory) {
+      items.push({ id: 'inventory', label: 'Inventory & Stock', icon: Boxes, count: alertCount });
+    }
+    if (canCatalog) {
+      items.push({
+        id: 'catalog',
+        label: 'Catalog & Products',
+        icon: ShoppingBag,
+        count: visibleProducts.length,
+      });
+    }
+    if (canOrders) {
+      items.push({
+        id: 'orders',
+        label: 'Orders & Fulfillment',
+        icon: Package,
+        count: orders.length,
+      });
+    }
+    if (canStores) {
+      items.push({
+        id: 'stores',
+        label: 'Hyderabad Stores',
+        icon: MapPin,
+        count: isStoreScoped ? 1 : STORES_DATA.length,
+      });
+    }
+    if (canUsers) {
+      items.push({
+        id: 'users',
+        label: 'Team & Permissions',
+        icon: Users,
+        count: staffUsers.length,
+      });
+    }
+    return items;
+  }, [
+    canInventory,
+    canCatalog,
+    canOrders,
+    canStores,
+    canUsers,
+    isStoreScoped,
+    currentUser.assignedStore,
+    products,
+    orders.length,
+    staffUsers.length,
+  ]);
+
+  const [activeTab, setActiveTab] = useState<AdminTab>(navItems[0]?.id || 'inventory');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<Category>('All');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
-  const [storeFilter, setStoreFilter] = useState<string>('All');
+  const [storeFilter, setStoreFilter] = useState<string>(
+    isStoreScoped ? currentUser.assignedStore : 'All'
+  );
+
+  // Team Filters
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | StaffRole>('all');
+  const [userStoreFilter, setUserStoreFilter] = useState<string>('All');
 
   // Product Add/Edit Modal
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -159,12 +301,37 @@ export function AdminDashboardView({
   // Confirm delete inline state
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
+  // Staff User Create/Edit Modal
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [userForm, setUserForm] = useState<UserFormState>(EMPTY_USER_FORM);
+  const [userFormError, setUserFormError] = useState<string | null>(null);
+  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (navItems.length > 0 && !navItems.some((item) => item.id === activeTab)) {
+      setActiveTab(navItems[0].id);
+    }
+  }, [navItems, activeTab]);
+
+  useEffect(() => {
+    if (isStoreScoped) {
+      setStoreFilter(currentUser.assignedStore);
+    }
+  }, [isStoreScoped, currentUser.assignedStore]);
+
+  const scopedProducts = useMemo(() => {
+    if (!isStoreScoped) return products;
+    return products.filter((p) => p.storeLocation === currentUser.assignedStore);
+  }, [products, isStoreScoped, currentUser.assignedStore]);
+
   const metrics = useMemo(() => {
-    const totalSkus = products.length;
-    const totalUnits = products.reduce((sum, p) => sum + p.stock, 0);
-    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock <= p.reorderLevel).length;
-    const outOfStockCount = products.filter((p) => p.stock <= 0).length;
-    const inventoryValue = products.reduce((sum, p) => sum + p.stock * p.price, 0);
+    const totalSkus = scopedProducts.length;
+    const totalUnits = scopedProducts.reduce((sum, p) => sum + p.stock, 0);
+    const lowStockCount = scopedProducts.filter(
+      (p) => p.stock > 0 && p.stock <= p.reorderLevel
+    ).length;
+    const outOfStockCount = scopedProducts.filter((p) => p.stock <= 0).length;
+    const inventoryValue = scopedProducts.reduce((sum, p) => sum + p.stock * p.price, 0);
     return {
       totalSkus,
       totalUnits,
@@ -173,12 +340,12 @@ export function AdminDashboardView({
       outOfStockCount,
       inventoryValue,
     };
-  }, [products]);
+  }, [scopedProducts]);
 
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    return scopedProducts.filter((p) => {
       if (categoryFilter !== 'All' && p.category !== categoryFilter) return false;
-      if (storeFilter !== 'All' && p.storeLocation !== storeFilter) return false;
+      if (!isStoreScoped && storeFilter !== 'All' && p.storeLocation !== storeFilter) return false;
       const status = getStockStatus(p).key;
       if (stockFilter !== 'all' && status !== stockFilter) return false;
       if (searchQuery.trim()) {
@@ -192,13 +359,30 @@ export function AdminDashboardView({
       }
       return true;
     });
-  }, [products, categoryFilter, storeFilter, stockFilter, searchQuery]);
+  }, [scopedProducts, categoryFilter, isStoreScoped, storeFilter, stockFilter, searchQuery]);
+
+  const filteredStaffUsers = useMemo(() => {
+    return staffUsers.filter((u) => {
+      if (userRoleFilter !== 'all' && u.role !== userRoleFilter) return false;
+      if (userStoreFilter !== 'All' && u.assignedStore !== userStoreFilter) return false;
+      if (userSearch.trim()) {
+        const q = userSearch.trim().toLowerCase();
+        return (
+          u.fullName.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q) ||
+          u.assignedStore.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [staffUsers, userRoleFilter, userStoreFilter, userSearch]);
 
   const openCreateModal = () => {
     const nextNum = 101 + products.length;
     setFormState({
       ...EMPTY_FORM,
       sku: `JH-MN-${nextNum}`,
+      storeLocation: isStoreScoped ? currentUser.assignedStore : 'Hitech City Metro',
     });
     setFormError(null);
     setProductModalOpen(true);
@@ -237,6 +421,51 @@ export function AdminDashboardView({
     setDraftSizeStock(copy);
   };
 
+  const openCreateUserModal = () => {
+    setUserForm({ ...EMPTY_USER_FORM });
+    setUserFormError(null);
+    setUserModalOpen(true);
+  };
+
+  const openEditUserModal = (u: PublicStaffUser) => {
+    setUserForm({
+      id: u.id,
+      fullName: u.fullName,
+      username: u.username,
+      password: '',
+      role: u.role,
+      assignedStore: u.assignedStore,
+      permissions: [...u.permissions],
+      active: u.active,
+    });
+    setUserFormError(null);
+    setUserModalOpen(true);
+  };
+
+  const handleRoleSwitchInForm = (nextRole: StaffRole) => {
+    setUserForm((prev) => ({
+      ...prev,
+      role: nextRole,
+      assignedStore:
+        nextRole === 'admin'
+          ? 'All Stores'
+          : prev.assignedStore === 'All Stores'
+            ? 'Hitech City Metro'
+            : prev.assignedStore,
+      permissions: [...DEFAULT_ROLE_PERMISSIONS[nextRole]],
+    }));
+  };
+
+  const toggleUserPermission = (perm: StaffPermission) => {
+    setUserForm((prev) => {
+      const exists = prev.permissions.includes(perm);
+      const next = exists
+        ? prev.permissions.filter((p) => p !== perm)
+        : [...prev.permissions, perm];
+      return { ...prev, permissions: next };
+    });
+  };
+
   const handleSubmitProduct = async (e: FormEvent) => {
     e.preventDefault();
     const price = Number(formState.price);
@@ -267,7 +496,7 @@ export function AdminDashboardView({
       title: formState.title.trim(),
       category: formState.category,
       occasion: formState.occasion,
-      storeLocation: formState.storeLocation,
+      storeLocation: isStoreScoped ? currentUser.assignedStore : formState.storeLocation,
       price,
       mrp: resolvedMrp,
       reorderLevel,
@@ -311,32 +540,157 @@ export function AdminDashboardView({
     }
   };
 
+  const handleSubmitUser = async (e: FormEvent) => {
+    e.preventDefault();
+    setUserFormError(null);
+
+    if (!userForm.fullName.trim() || !userForm.username.trim()) {
+      setUserFormError('Full name and username are required.');
+      return;
+    }
+    if (!userForm.id && userForm.password.trim().length < 4) {
+      setUserFormError('Create a password of at least 4 characters.');
+      return;
+    }
+    if (userForm.id && userForm.password.trim() && userForm.password.trim().length < 4) {
+      setUserFormError('New password must be at least 4 characters.');
+      return;
+    }
+    if (userForm.permissions.length === 0) {
+      setUserFormError('Select at least one permission for this account.');
+      return;
+    }
+
+    const res = userForm.id
+      ? await onUpdateStaffUser(userForm.id, {
+          fullName: userForm.fullName.trim(),
+          role: userForm.role,
+          assignedStore: userForm.assignedStore,
+          permissions: userForm.permissions,
+          active: userForm.active,
+          ...(userForm.password.trim() ? { password: userForm.password.trim() } : {}),
+        })
+      : await onCreateStaffUser({
+          fullName: userForm.fullName.trim(),
+          username: userForm.username.trim().toLowerCase().replace(/\s+/g, '_'),
+          password: userForm.password.trim(),
+          role: userForm.role,
+          assignedStore: userForm.assignedStore,
+          permissions: userForm.permissions,
+          active: userForm.active,
+        });
+
+    if (res.ok) {
+      setUserModalOpen(false);
+    } else {
+      setUserFormError(res.error || 'Could not save user account.');
+    }
+  };
+
   const sectionLabelMap: Record<AdminTab, string> = {
     inventory: 'Inventory & Stock',
     catalog: 'Catalog & Products',
     orders: 'Orders & Fulfillment',
     stores: 'Hyderabad Stores',
+    users: 'Team & Permissions',
   };
 
-  const navItems: { id: AdminTab; label: string; icon: typeof Boxes; count?: number }[] = [
-    { id: 'inventory', label: 'Inventory & Stock', icon: Boxes, count: metrics.alertCount },
-    { id: 'catalog', label: 'Catalog & Products', icon: ShoppingBag, count: products.length },
-    { id: 'orders', label: 'Orders & Fulfillment', icon: Package, count: orders.length },
-    { id: 'stores', label: 'Hyderabad Stores', icon: MapPin, count: STORES_DATA.length },
-  ];
+  const permissionLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    PERMISSION_DEFINITIONS.forEach((p) => {
+      map[p.key] = p.label;
+    });
+    return map;
+  }, []);
+
+  const visibleStores = isStoreScoped
+    ? STORES_DATA.filter((st) => st.name.includes(currentUser.assignedStore) || (currentUser.assignedStore === 'Venkata Ramana Colony' && st.name.includes('Venkata Ramana')) || (currentUser.assignedStore === 'Kukatpally Hub' && st.name.includes('Kukatpally')) || (currentUser.assignedStore === 'Hitech City Metro' && st.name.includes('Hitech City')))
+    : STORES_DATA;
 
   return (
-    <div className="bg-neutral-50 dark:bg-[#080808] min-h-[calc(100vh-64px)] transition-colors">
-      <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row">
+    <div className="bg-neutral-50 dark:bg-[#080808] min-h-screen flex flex-col transition-colors">
+      {/* Dedicated Top Operations Bar (Separate from Customer Storefront) */}
+      <header className="sticky top-0 z-40 h-16 bg-white dark:bg-[#0b0b0b] border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <BrandLogo compact variant={theme} />
+          <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-neutral-200 dark:border-neutral-800">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100">
+              Operations Console
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                currentUser.role === 'admin'
+                  ? 'bg-[#faa619] text-neutral-950'
+                  : 'bg-neutral-950 dark:bg-neutral-800 text-white dark:text-neutral-200'
+              }`}
+            >
+              {currentUser.role}
+            </span>
+            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              · {currentUser.assignedStore}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden md:block text-right mr-2">
+            <div className="text-xs font-bold text-neutral-950 dark:text-white leading-tight">
+              {currentUser.fullName}
+            </div>
+            <div className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
+              @{currentUser.username}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            role="switch"
+            aria-checked={theme === 'dark'}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            className="inline-flex items-center gap-1.5 px-2.5 h-9 border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 hover:border-[#faa619] text-neutral-800 dark:text-neutral-100 text-xs font-semibold rounded-md transition-colors"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-[#faa619]" />
+            ) : (
+              <Moon className="w-4 h-4 text-neutral-700" />
+            )}
+            <span className="hidden lg:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onBackToStore}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 h-9 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-900 dark:text-neutral-100 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Storefront</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            className="inline-flex items-center gap-1.5 px-3 h-9 border border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/30 hover:bg-red-600 hover:text-white dark:hover:bg-red-700 text-red-700 dark:text-red-400 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </header>
+
+      <div className="max-w-[1440px] w-full mx-auto flex flex-col lg:flex-row flex-1">
         {/* Left Sidebar (Desktop) */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 bg-white dark:bg-[#0b0b0b] border-r border-neutral-200 dark:border-neutral-800 min-h-[calc(100vh-64px)] p-4 justify-between">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 bg-white dark:bg-[#0b0b0b] border-r border-neutral-200 dark:border-neutral-800 p-4 justify-between">
           <div>
             <div className="px-2.5 pb-4 mb-3 border-b border-neutral-200 dark:border-neutral-800">
               <div className="text-[11px] font-bold uppercase tracking-wider text-[#d98200] dark:text-[#faa619]">
-                Operations Console
+                {currentUser.role === 'admin' ? 'Administrator Access' : 'Store Team Access'}
               </div>
-              <div className="text-sm font-bold text-neutral-950 dark:text-white mt-0.5">
-                Jhonty Hub Backoffice
+              <div className="text-sm font-bold text-neutral-950 dark:text-white mt-0.5 truncate">
+                {currentUser.assignedStore}
+              </div>
+              <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
+                {currentUser.permissions.length} of {PERMISSION_DEFINITIONS.length} modules enabled
               </div>
             </div>
 
@@ -376,15 +730,15 @@ export function AdminDashboardView({
             </nav>
           </div>
 
-          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-            <button
-              type="button"
-              onClick={onBackToStore}
-              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 rounded-md text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900 transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Storefront</span>
-            </button>
+          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-2">
+            <div className="px-2.5 py-2 rounded-md bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-[11px] text-neutral-600 dark:text-neutral-400">
+              <div className="font-bold text-neutral-900 dark:text-neutral-200 mb-1">
+                Active Permissions
+              </div>
+              <div className="leading-relaxed">
+                {currentUser.permissions.map((p) => permissionLabelMap[p]).join(' · ')}
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -408,11 +762,11 @@ export function AdminDashboardView({
             ))}
           </div>
 
-          {/* Top Breadcrumb Bar + Primary Actions (Max 2 on Right) */}
+          {/* Top Breadcrumb Bar + Primary Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-200 dark:border-neutral-800">
             <div>
               <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                Jhonty Hub / Admin Console /{' '}
+                Jhonty Hub / {currentUser.assignedStore} /{' '}
                 <span className="text-neutral-950 dark:text-white font-semibold">
                   {sectionLabelMap[activeTab]}
                 </span>
@@ -423,82 +777,101 @@ export function AdminDashboardView({
             </div>
 
             <div className="flex items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => onRefreshInventory(10)}
-                className="inline-flex items-center gap-1.5 h-10 px-3.5 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-900 dark:text-neutral-100 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isBusy ? 'animate-spin' : ''}`} />
-                <span>Refresh Low Stock</span>
-              </button>
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-1.5 h-10 px-4 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Product</span>
-              </button>
+              {activeTab === 'users' && canUsers ? (
+                <button
+                  type="button"
+                  onClick={openCreateUserModal}
+                  className="inline-flex items-center gap-1.5 h-10 px-4 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Create User Credential</span>
+                </button>
+              ) : (
+                <>
+                  {canInventory && (
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => onRefreshInventory(10)}
+                      className="inline-flex items-center gap-1.5 h-10 px-3.5 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-900 dark:text-neutral-100 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 disabled:opacity-50 transition-colors"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isBusy ? 'animate-spin' : ''}`} />
+                      <span>Refresh Low Stock</span>
+                    </button>
+                  )}
+                  {canCatalog && (
+                    <button
+                      type="button"
+                      onClick={openCreateModal}
+                      className="inline-flex items-center gap-1.5 h-10 px-4 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Product</span>
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
-          {/* 4-Column Summary Strip (Single Elevation) */}
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                Active Catalog SKUs
+          {/* 4-Column Summary Strip */}
+          {activeTab !== 'users' && (
+            <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  Active Catalog SKUs
+                </div>
+                <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
+                  {metrics.totalSkus}
+                </div>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  {isStoreScoped ? `Scoped: ${currentUser.assignedStore}` : 'Across 3 Hyderabad stores'}
+                </div>
               </div>
-              <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
-                {metrics.totalSkus}
-              </div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                Across 3 Hyderabad stores
-              </div>
-            </div>
 
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                Total Units on Hand
+              <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  Total Units on Hand
+                </div>
+                <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
+                  {metrics.totalUnits.toLocaleString('en-IN')}
+                </div>
+                <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mt-1">
+                  Synced with live storefront
+                </div>
               </div>
-              <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
-                {metrics.totalUnits.toLocaleString('en-IN')}
-              </div>
-              <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mt-1">
-                Synced with live storefront
-              </div>
-            </div>
 
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                Stock Alerts
+              <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  Stock Alerts
+                </div>
+                <div
+                  className={`text-2xl font-bold tabular-nums mt-1 ${
+                    metrics.alertCount > 0
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-emerald-700 dark:text-emerald-400'
+                  }`}
+                >
+                  {metrics.alertCount}
+                </div>
+                <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 tabular-nums">
+                  {metrics.lowStockCount} Low Stock · {metrics.outOfStockCount} Out of Stock
+                </div>
               </div>
-              <div
-                className={`text-2xl font-bold tabular-nums mt-1 ${
-                  metrics.alertCount > 0
-                    ? 'text-amber-700 dark:text-amber-400'
-                    : 'text-emerald-700 dark:text-emerald-400'
-                }`}
-              >
-                {metrics.alertCount}
-              </div>
-              <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 tabular-nums">
-                {metrics.lowStockCount} Low Stock · {metrics.outOfStockCount} Out of Stock
-              </div>
-            </div>
 
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                Inventory Retail Value
+              <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  Inventory Retail Value
+                </div>
+                <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
+                  {formatINR(metrics.inventoryValue)}
+                </div>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 tabular-nums">
+                  {orders.length} active &amp; completed orders
+                </div>
               </div>
-              <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
-                {formatINR(metrics.inventoryValue)}
-              </div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 tabular-nums">
-                {orders.length} active &amp; completed orders
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           {/* INVENTORY OR CATALOG TAB */}
           {(activeTab === 'inventory' || activeTab === 'catalog') && (
@@ -533,12 +906,13 @@ export function AdminDashboardView({
                   </select>
 
                   <select
-                    value={storeFilter}
+                    value={isStoreScoped ? currentUser.assignedStore : storeFilter}
+                    disabled={isStoreScoped}
                     onChange={(e) => setStoreFilter(e.target.value)}
                     aria-label="Filter by store location"
-                    className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                    className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 disabled:opacity-60 focus:border-[#faa619] focus:outline-none"
                   >
-                    <option value="All">All Store Locations</option>
+                    {!isStoreScoped && <option value="All">All Store Locations</option>}
                     {STORE_LOCATIONS.map((st) => (
                       <option key={st} value={st}>
                         {st}
@@ -579,7 +953,7 @@ export function AdminDashboardView({
                       setSearchQuery('');
                       setCategoryFilter('All');
                       setStockFilter('all');
-                      setStoreFilter('All');
+                      if (!isStoreScoped) setStoreFilter('All');
                     }}
                     className="px-4 py-2 border border-neutral-950 dark:border-neutral-700 text-neutral-950 dark:text-white text-xs font-bold uppercase tracking-wider rounded-md"
                   >
@@ -626,8 +1000,9 @@ export function AdminDashboardView({
                                   </div>
                                   <button
                                     type="button"
-                                    onClick={() => openEditModal(p)}
-                                    className="text-left font-semibold text-neutral-950 dark:text-white hover:text-[#d98200] dark:hover:text-[#faa619] line-clamp-1 mt-0.5"
+                                    disabled={!canCatalog}
+                                    onClick={() => canCatalog && openEditModal(p)}
+                                    className="text-left font-semibold text-neutral-950 dark:text-white hover:text-[#d98200] dark:hover:text-[#faa619] disabled:hover:text-neutral-950 dark:disabled:hover:text-white line-clamp-1 mt-0.5"
                                   >
                                     {p.title}
                                   </button>
@@ -684,51 +1059,59 @@ export function AdminDashboardView({
 
                             <td className="py-3.5 px-4 text-right whitespace-nowrap">
                               <div className="inline-flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  disabled={isBusy}
-                                  onClick={() => onRestockProduct(p.id, { deltaPerSize: 5 })}
-                                  title="Add +5 units to every size"
-                                  className="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-[#faa619] text-neutral-900 dark:text-neutral-100 hover:text-neutral-950 text-xs font-bold rounded-md tabular-nums transition-colors"
-                                >
-                                  +5 Sizes
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openStockAdjuster(p)}
-                                  className="px-2.5 py-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-800 dark:text-neutral-200 text-xs font-semibold rounded-md transition-colors"
-                                >
-                                  Stock
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openEditModal(p)}
-                                  aria-label={`Edit ${p.title}`}
-                                  className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-md"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                {confirmDeleteId === p.id ? (
-                                  <button
-                                    type="button"
-                                    disabled={isBusy}
-                                    onClick={async () => {
-                                      await onDeleteProduct(p.id);
-                                      setConfirmDeleteId(null);
-                                    }}
-                                    className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-md"
-                                  >
-                                    Confirm
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirmDeleteId(p.id)}
-                                    aria-label={`Delete ${p.title}`}
-                                    className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-red-600 dark:hover:border-red-500 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 rounded-md"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                {canInventory && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() => onRestockProduct(p.id, { deltaPerSize: 5 })}
+                                      title="Add +5 units to every size"
+                                      className="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-[#faa619] text-neutral-900 dark:text-neutral-100 hover:text-neutral-950 text-xs font-bold rounded-md tabular-nums transition-colors"
+                                    >
+                                      +5 Sizes
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openStockAdjuster(p)}
+                                      className="px-2.5 py-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-800 dark:text-neutral-200 text-xs font-semibold rounded-md transition-colors"
+                                    >
+                                      Stock
+                                    </button>
+                                  </>
+                                )}
+                                {canCatalog && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditModal(p)}
+                                      aria-label={`Edit ${p.title}`}
+                                      className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-md"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    {confirmDeleteId === p.id ? (
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={async () => {
+                                          await onDeleteProduct(p.id);
+                                          setConfirmDeleteId(null);
+                                        }}
+                                        className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-md"
+                                      >
+                                        Confirm
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirmDeleteId(p.id)}
+                                        aria-label={`Delete ${p.title}`}
+                                        className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-red-600 dark:hover:border-red-500 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 rounded-md"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -743,7 +1126,7 @@ export function AdminDashboardView({
           )}
 
           {/* ORDERS & FULFILLMENT TAB */}
-          {activeTab === 'orders' && (
+          {activeTab === 'orders' && canOrders && (
             <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
               <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                 <div>
@@ -846,9 +1229,9 @@ export function AdminDashboardView({
           )}
 
           {/* HYDERABAD STORES TAB */}
-          {activeTab === 'stores' && (
+          {activeTab === 'stores' && canStores && (
             <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {STORES_DATA.map((st) => {
+              {visibleStores.map((st) => {
                 const shortName = st.name.includes('Hitech City')
                   ? 'Hitech City Metro'
                   : st.name.includes('Venkata Ramana')
@@ -857,6 +1240,9 @@ export function AdminDashboardView({
                 const storeProducts = products.filter((p) => p.storeLocation === shortName);
                 const storeUnits = storeProducts.reduce((s, p) => s + p.stock, 0);
                 const storeAlerts = storeProducts.filter((p) => p.stock <= p.reorderLevel).length;
+                const storeStaffCount = staffUsers.filter(
+                  (u) => u.assignedStore === shortName || u.assignedStore === 'All Stores'
+                ).length;
 
                 return (
                   <div
@@ -864,8 +1250,13 @@ export function AdminDashboardView({
                     className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5 flex flex-col justify-between gap-4"
                   >
                     <div>
-                      <div className="text-xs font-mono font-bold text-[#d98200] dark:text-[#faa619]">
-                        {st.id} · {st.city}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-mono font-bold text-[#d98200] dark:text-[#faa619]">
+                          {st.id} · {st.city}
+                        </span>
+                        <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
+                          {storeStaffCount} staff assigned
+                        </span>
                       </div>
                       <h3 className="text-base font-bold text-neutral-950 dark:text-white mt-1">
                         {st.name}
@@ -908,23 +1299,525 @@ export function AdminDashboardView({
                       </dl>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setStoreFilter(shortName);
-                        setActiveTab('inventory');
-                      }}
-                      className="w-full h-10 border border-neutral-950 dark:border-neutral-700 text-neutral-950 dark:text-white hover:bg-[#faa619] hover:border-[#faa619] hover:text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
-                    >
-                      View Store Inventory
-                    </button>
+                    {canInventory && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStoreFilter(shortName);
+                          setActiveTab('inventory');
+                        }}
+                        className="w-full h-10 border border-neutral-950 dark:border-neutral-700 text-neutral-950 dark:text-white hover:bg-[#faa619] hover:border-[#faa619] hover:text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+                      >
+                        View Store Inventory
+                      </button>
+                    )}
                   </div>
                 );
               })}
             </section>
           )}
+
+          {/* TEAM & PERMISSIONS TAB (Admin Only) */}
+          {activeTab === 'users' && canUsers && (
+            <div className="space-y-6">
+              {/* Role & Store Summary Strip */}
+              <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                  <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Total Staff Accounts
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
+                    {staffUsers.length}
+                  </div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    {staffUsers.filter((u) => u.active).length} active credentials
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                  <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Admin Accounts
+                  </div>
+                  <div className="text-2xl font-bold text-[#d98200] dark:text-[#faa619] tabular-nums mt-1">
+                    {staffUsers.filter((u) => u.role === 'admin').length}
+                  </div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Full system &amp; role control
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                  <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Store Team Leads
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
+                    {staffUsers.filter((u) => u.role === 'team').length}
+                  </div>
+                  <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mt-1">
+                    Store-wise scoped permissions
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+                  <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Store Coverage
+                  </div>
+                  <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
+                    {STORES_DATA.length} Hubs
+                  </div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Madhapur · Hitech · Kukatpally
+                  </div>
+                </div>
+              </section>
+
+              {/* Team Directory & Credentials Table */}
+              <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="search"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search staff name, username, or store..."
+                      aria-label="Search staff credentials"
+                      className="w-full h-10 pl-9 pr-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 placeholder:text-neutral-400 focus:bg-white dark:focus:bg-neutral-950 focus:border-[#faa619] focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <select
+                      value={userRoleFilter}
+                      onChange={(e) => setUserRoleFilter(e.target.value as 'all' | StaffRole)}
+                      aria-label="Filter users by role"
+                      className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                    >
+                      <option value="all">All Roles</option>
+                      <option value="admin">Admin Only</option>
+                      <option value="team">Team Only</option>
+                    </select>
+
+                    <select
+                      value={userStoreFilter}
+                      onChange={(e) => setUserStoreFilter(e.target.value)}
+                      aria-label="Filter users by assigned store"
+                      className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                    >
+                      <option value="All">All Store Assignments</option>
+                      {STORE_SCOPES.map((sc) => (
+                        <option key={sc} value={sc}>
+                          {sc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {filteredStaffUsers.length === 0 ? (
+                  <div className="p-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                    No staff credentials matched your filter.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+                          <th className="py-3 px-4">Staff Member &amp; Username</th>
+                          <th className="py-3 px-4">Account Role</th>
+                          <th className="py-3 px-4">Assigned Store</th>
+                          <th className="py-3 px-4">Granted Permissions</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
+                        {filteredStaffUsers.map((u) => {
+                          const isSelf = u.id === currentUser.id;
+                          return (
+                            <tr
+                              key={u.id}
+                              className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors"
+                            >
+                              <td className="py-3.5 px-4">
+                                <div className="font-bold text-neutral-950 dark:text-white flex items-center gap-2">
+                                  <span>{u.fullName}</span>
+                                  {isSelf && (
+                                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                  @{u.username}
+                                  {u.createdBy ? ` · Added by ${u.createdBy}` : ''}
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                                    u.role === 'admin'
+                                      ? 'bg-[#faa619] text-neutral-950'
+                                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                                  }`}
+                                >
+                                  <Shield className="w-3 h-3" />
+                                  <span>{u.role}</span>
+                                </span>
+                              </td>
+
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                                  {u.assignedStore}
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                <div className="text-xs text-neutral-700 dark:text-neutral-300 max-w-xs leading-relaxed">
+                                  {u.permissions.map((p) => permissionLabelMap[p] || p).join(' · ')}
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <span
+                                  className={`text-xs font-bold ${
+                                    u.active
+                                      ? 'text-emerald-700 dark:text-emerald-400'
+                                      : 'text-red-600 dark:text-red-400'
+                                  }`}
+                                >
+                                  {u.active ? 'Active' : 'Suspended'}
+                                </span>
+                              </td>
+
+                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                <div className="inline-flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    onClick={() => openEditUserModal(u)}
+                                    className="px-2.5 py-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-800 dark:text-neutral-200 text-xs font-semibold rounded-md transition-colors"
+                                  >
+                                    Edit Access
+                                  </button>
+
+                                  {!isSelf && (
+                                    <button
+                                      type="button"
+                                      disabled={isBusy}
+                                      onClick={() =>
+                                        onUpdateStaffUser(u.id, { active: !u.active })
+                                      }
+                                      className="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs font-semibold rounded-md transition-colors"
+                                    >
+                                      {u.active ? 'Suspend' : 'Activate'}
+                                    </button>
+                                  )}
+
+                                  {!isSelf &&
+                                    (confirmDeleteUserId === u.id ? (
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={async () => {
+                                          await onDeleteStaffUser(u.id);
+                                          setConfirmDeleteUserId(null);
+                                        }}
+                                        className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-bold rounded-md"
+                                      >
+                                        Confirm
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setConfirmDeleteUserId(u.id)}
+                                        aria-label={`Delete ${u.fullName}`}
+                                        className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-red-600 dark:hover:border-red-500 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 rounded-md"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    ))}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* CREATE / EDIT TEAM & ADMIN USER MODAL */}
+      {userModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[1px]">
+          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between sticky top-0 bg-white dark:bg-neutral-900 z-10">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-[#d98200] dark:text-[#faa619]" />
+                <h2 className="text-base font-bold text-neutral-950 dark:text-white">
+                  {userForm.id
+                    ? `Edit Credentials & Permissions (@${userForm.username})`
+                    : 'Create Store-Wise Staff Credential'}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUserModalOpen(false)}
+                aria-label="Close user modal"
+                className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitUser} className="p-6 space-y-5">
+              {userFormError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 rounded-md text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{userFormError}</span>
+                </div>
+              )}
+
+              {/* Identity & Password */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={userForm.fullName}
+                    onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                    placeholder="e.g. Kiran Kumar"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Login Username *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    disabled={Boolean(userForm.id)}
+                    value={userForm.username}
+                    onChange={(e) =>
+                      setUserForm({
+                        ...userForm,
+                        username: e.target.value.toLowerCase().replace(/\s+/g, '_'),
+                      })
+                    }
+                    placeholder="e.g. kukatpally_lead"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm font-mono text-neutral-950 dark:text-neutral-100 disabled:opacity-60 focus:border-[#faa619] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    {userForm.id ? 'Reset Password (optional)' : 'Login Password *'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      required={!userForm.id}
+                      value={userForm.password}
+                      onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                      placeholder={
+                        userForm.id ? 'Leave blank to keep existing' : 'Min 4 characters'
+                      }
+                      className="flex-1 h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm font-mono text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const rnd = `JH#${Math.floor(1000 + Math.random() * 9000)}`;
+                        setUserForm({ ...userForm, password: rnd });
+                      }}
+                      className="px-3 h-10 border border-neutral-300 dark:border-neutral-700 hover:border-[#faa619] text-xs font-bold rounded-md text-neutral-800 dark:text-neutral-200 shrink-0"
+                    >
+                      Generate
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Store Assignment *
+                  </label>
+                  <select
+                    value={userForm.assignedStore}
+                    onChange={(e) =>
+                      setUserForm({ ...userForm, assignedStore: e.target.value as StoreScope })
+                    }
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm font-semibold text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                  >
+                    {STORE_SCOPES.map((sc) => (
+                      <option key={sc} value={sc}>
+                        {sc}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Role Selection: Admin vs Team */}
+              <div>
+                <div className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
+                  Choose Account Type (Admin or Team) *
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSwitchInForm('admin')}
+                    className={`p-3.5 text-left rounded-lg border-2 transition-colors ${
+                      userForm.role === 'admin'
+                        ? 'border-[#faa619] bg-[#fffcf5] dark:bg-neutral-950'
+                        : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-neutral-950 dark:text-white">
+                        Admin
+                      </span>
+                      <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#faa619] text-neutral-950">
+                        Full Access
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                      Full backoffice control including pricing, all stores, and creating Team users.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSwitchInForm('team')}
+                    className={`p-3.5 text-left rounded-lg border-2 transition-colors ${
+                      userForm.role === 'team'
+                        ? 'border-[#faa619] bg-[#fffcf5] dark:bg-neutral-950'
+                        : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-neutral-950 dark:text-white">
+                        Team
+                      </span>
+                      <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-950 dark:bg-neutral-800 text-white dark:text-neutral-200">
+                        Store Ops
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                      Store-scoped operations for stock updates, Click &amp; Collect, and order dispatch.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Granular Permissions */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                    Role Permissions ({userForm.permissions.length} selected)
+                  </span>
+                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setUserForm((prev) => ({
+                          ...prev,
+                          permissions: [...DEFAULT_ROLE_PERMISSIONS.admin],
+                        }))
+                      }
+                      className="text-[#d98200] dark:text-[#faa619] hover:underline"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-neutral-300 dark:text-neutral-700">|</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setUserForm((prev) => ({
+                          ...prev,
+                          permissions: [...DEFAULT_ROLE_PERMISSIONS.team],
+                        }))
+                      }
+                      className="text-neutral-600 dark:text-neutral-400 hover:underline"
+                    >
+                      Team Preset
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {PERMISSION_DEFINITIONS.map((perm) => {
+                    const checked = userForm.permissions.includes(perm.key);
+                    return (
+                      <label
+                        key={perm.key}
+                        className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                          checked
+                            ? 'border-[#faa619]/70 bg-[#fffcf5] dark:bg-neutral-950'
+                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleUserPermission(perm.key)}
+                          className="mt-0.5 accent-[#faa619]"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-neutral-950 dark:text-white">
+                            {perm.label}
+                          </div>
+                          <div className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
+                            {perm.description}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2.5 text-xs font-semibold text-neutral-800 dark:text-neutral-200 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={userForm.active}
+                  onChange={(e) => setUserForm({ ...userForm, active: e.target.checked })}
+                  className="accent-[#faa619]"
+                />
+                <span>Account Active (allow immediate sign-in at /admin)</span>
+              </label>
+
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-neutral-200 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setUserModalOpen(false)}
+                  className="h-10 px-4 border border-neutral-300 dark:border-neutral-700 text-xs font-bold uppercase tracking-wider rounded-md text-neutral-700 dark:text-neutral-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isBusy}
+                  className="h-10 px-5 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md disabled:opacity-50"
+                >
+                  {userForm.id ? 'Save Permissions' : 'Create Credential'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ADD / EDIT PRODUCT MODAL */}
       {productModalOpen && (
@@ -1041,11 +1934,12 @@ export function AdminDashboardView({
                     Hyderabad Store
                   </label>
                   <select
-                    value={formState.storeLocation}
+                    value={isStoreScoped ? currentUser.assignedStore : formState.storeLocation}
+                    disabled={isStoreScoped}
                     onChange={(e) =>
                       setFormState({ ...formState, storeLocation: e.target.value })
                     }
-                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 disabled:opacity-60 focus:border-[#faa619] focus:outline-none"
                   >
                     {STORE_LOCATIONS.map((s) => (
                       <option key={s} value={s}>

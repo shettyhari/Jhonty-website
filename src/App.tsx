@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { DEFAULT_ROLE_PERMISSIONS, INITIAL_STAFF_USERS } from './data/adminUsers';
 import { PRODUCTS, STORES_DATA } from './data/catalog';
 import {
   OrderTrackingRecord,
@@ -6,12 +7,18 @@ import {
   buildTrackingFromReceipt,
 } from './data/tracking';
 import {
+  AdminSession,
   BagItem,
   Category,
   Occasion,
   OrderReceipt,
   Product,
+  PublicStaffUser,
+  StaffPermission,
+  StaffRole,
+  StaffUser,
   StoreLocation,
+  StoreScope,
   ViewMode,
 } from './types';
 import { Header } from './components/Header';
@@ -21,6 +28,7 @@ import { StoreLocatorView } from './components/StoreLocatorView';
 import { CheckoutView } from './components/CheckoutView';
 import { OrderTrackingView } from './components/OrderTrackingView';
 import { AdminDashboardView } from './components/AdminDashboardView';
+import { AdminLoginView } from './components/AdminLoginView';
 import { Overlays } from './components/Overlays';
 import { Footer } from './components/Footer';
 
@@ -33,8 +41,18 @@ function loadStored<T>(key: string, fallback: T): T {
   }
 }
 
+function isAdminRoute(): boolean {
+  const path = window.location.pathname.replace(/\/+$/, '');
+  return path === '/admin' || window.location.hash === '#admin';
+}
+
+function stripPassword(u: StaffUser): PublicStaffUser {
+  const { password: _pw, ...safe } = u;
+  return safe;
+}
+
 export default function App() {
-  const [view, setView] = useState<ViewMode>('home');
+  const [view, setView] = useState<ViewMode>(() => (isAdminRoute() ? 'admin' : 'home'));
   const [activeProductId, setActiveProductId] = useState<number>(1);
   const [activeCategory, setActiveCategory] = useState<Category>('All');
   const [activeBrand, setActiveBrand] = useState<string | null>(null);
@@ -46,6 +64,17 @@ export default function App() {
   const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
   const [isAdminBusy, setIsAdminBusy] = useState<boolean>(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => loadStored('jh_theme', 'light'));
+
+  // Separate Admin / Team Portal Auth & Staff Credentials
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(() =>
+    loadStored('jh_admin_session', null)
+  );
+  const [localStaffUsers, setLocalStaffUsers] = useState<StaffUser[]>(() =>
+    loadStored('jh_staff_users', INITIAL_STAFF_USERS)
+  );
+  const [staffUsers, setStaffUsers] = useState<PublicStaffUser[]>(() =>
+    loadStored('jh_staff_users', INITIAL_STAFF_USERS).map(stripPassword)
+  );
 
   const [bag, setBag] = useState<BagItem[]>(() => loadStored('jh_bag', []));
   const [wishlistIds, setWishlistIds] = useState<number[]>(() => loadStored('jh_wishlist', []));
@@ -67,6 +96,9 @@ export default function App() {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  const isJsonResponse = (res: Response) =>
+    (res.headers.get('content-type') || '').includes('application/json');
+
   // Hydrate products & orders from backend API on mount
   useEffect(() => {
     let cancelled = false;
@@ -76,13 +108,13 @@ export default function App() {
           fetch('/api/products'),
           fetch('/api/orders'),
         ]);
-        if (!cancelled && prodRes.ok) {
+        if (!cancelled && prodRes.ok && isJsonResponse(prodRes)) {
           const prodData = (await prodRes.json()) as { products?: Product[] };
           if (Array.isArray(prodData.products)) {
             setProducts(prodData.products);
           }
         }
-        if (!cancelled && ordRes.ok) {
+        if (!cancelled && ordRes.ok && isJsonResponse(ordRes)) {
           const ordData = (await ordRes.json()) as { orders?: OrderTrackingRecord[] };
           if (Array.isArray(ordData.orders)) {
             setTrackingOrders(ordData.orders);
@@ -100,12 +132,71 @@ export default function App() {
     };
   }, []);
 
+  // Verify stored admin session & load staff list when authenticated in /admin
+  useEffect(() => {
+    let cancelled = false;
+    async function syncAdminSession() {
+      if (!adminSession?.token) return;
+      try {
+        const res = await fetch('/api/admin/session', {
+          headers: { 'x-admin-token': adminSession.token },
+        });
+        if (res.status === 404 || !isJsonResponse(res)) {
+          // Static host fallback: keep synced with localStaffUsers
+          if (!cancelled) {
+            setStaffUsers(localStaffUsers.map(stripPassword));
+          }
+          return;
+        }
+        if (res.status === 401 || res.status === 403) {
+          if (!cancelled) setAdminSession(null);
+          return;
+        }
+        if (res.ok) {
+          const data = (await res.json()) as { user: PublicStaffUser };
+          if (!cancelled) {
+            setAdminSession((prev) => (prev ? { ...prev, user: data.user } : null));
+            if (data.user.permissions.includes('manage_users')) {
+              const usersRes = await fetch('/api/admin/users', {
+                headers: { 'x-admin-token': adminSession.token },
+              });
+              if (usersRes.ok && isJsonResponse(usersRes)) {
+                const uData = (await usersRes.json()) as { users: PublicStaffUser[] };
+                if (!cancelled && Array.isArray(uData.users)) {
+                  setStaffUsers(uData.users);
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // Offline / static fallback
+      }
+    }
+    syncAdminSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminSession?.token]);
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     try {
       localStorage.setItem('jh_theme', JSON.stringify(theme));
     } catch {}
   }, [theme]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('jh_admin_session', JSON.stringify(adminSession));
+    } catch {}
+  }, [adminSession]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('jh_staff_users', JSON.stringify(localStaffUsers));
+    } catch {}
+  }, [localStaffUsers]);
 
   useEffect(() => {
     try {
@@ -144,7 +235,11 @@ export default function App() {
   }, [trackingOrders]);
 
   useEffect(() => {
-    const syncFromHash = () => {
+    const syncFromUrl = () => {
+      if (isAdminRoute()) {
+        setView('admin');
+        return;
+      }
       const h = window.location.hash;
       if (h.startsWith('#product/')) {
         const id = Number(h.split('/')[1]);
@@ -158,15 +253,17 @@ export default function App() {
         setView('checkout');
       } else if (h === '#tracking') {
         setView('tracking');
-      } else if (h === '#admin') {
-        setView('admin');
       } else {
         setView('home');
       }
     };
-    syncFromHash();
-    window.addEventListener('hashchange', syncFromHash);
-    return () => window.removeEventListener('hashchange', syncFromHash);
+    syncFromUrl();
+    window.addEventListener('hashchange', syncFromUrl);
+    window.addEventListener('popstate', syncFromUrl);
+    return () => {
+      window.removeEventListener('hashchange', syncFromUrl);
+      window.removeEventListener('popstate', syncFromUrl);
+    };
   }, []);
 
   const showToast = (msg: string) => {
@@ -188,19 +285,19 @@ export default function App() {
   const navigateTo = (nextView: ViewMode, productId?: number) => {
     closeAllOverlays();
     setView(nextView);
-    if (nextView === 'pdp' && productId) {
+    if (nextView === 'admin') {
+      window.history.replaceState(null, '', '/admin');
+    } else if (nextView === 'pdp' && productId) {
       setActiveProductId(productId);
-      window.history.replaceState(null, '', `#product/${productId}`);
+      window.history.replaceState(null, '', `/#product/${productId}`);
     } else if (nextView === 'stores') {
-      window.history.replaceState(null, '', '#stores');
+      window.history.replaceState(null, '', '/#stores');
     } else if (nextView === 'checkout') {
-      window.history.replaceState(null, '', '#checkout');
+      window.history.replaceState(null, '', '/#checkout');
     } else if (nextView === 'tracking') {
-      window.history.replaceState(null, '', '#tracking');
-    } else if (nextView === 'admin') {
-      window.history.replaceState(null, '', '#admin');
+      window.history.replaceState(null, '', '/#tracking');
     } else {
-      window.history.replaceState(null, '', '#home');
+      window.history.replaceState(null, '', '/#home');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -341,9 +438,6 @@ export default function App() {
   const sumSizeStock = (sizeStock: Record<string, number>) =>
     Object.values(sizeStock).reduce((sum, n) => sum + Math.max(0, Number(n) || 0), 0);
 
-  const isJsonResponse = (res: Response) =>
-    (res.headers.get('content-type') || '').includes('application/json');
-
   const handleCompleteOrder = async (receipt: OrderReceipt) => {
     const deductLocally = () => {
       setProducts((prev) =>
@@ -391,7 +485,278 @@ export default function App() {
     showToast(`Order ${receipt.orderId} confirmed!`);
   };
 
-  // Admin Backend Handlers (with static-host fallback if /api/* is absent)
+  // =========================================================================
+  // ADMIN & TEAM AUTHENTICATION + CREDENTIALS MANAGEMENT
+  // =========================================================================
+
+  const adminHeaders = (): Record<string, string> => ({
+    'Content-Type': 'application/json',
+    ...(adminSession?.token ? { 'x-admin-token': adminSession.token } : {}),
+  });
+
+  const handleAdminLogin = async (
+    username: string,
+    password: string
+  ): Promise<{ ok: boolean; error?: string }> => {
+    setIsAdminBusy(true);
+    const loginLocally = (): { ok: boolean; error?: string } => {
+      const match = localStaffUsers.find(
+        (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+      );
+      if (!match) return { ok: false, error: 'Invalid staff username or password.' };
+      if (!match.active) {
+        return {
+          ok: false,
+          error: 'This account has been suspended. Contact a Master Admin.',
+        };
+      }
+      const safe = stripPassword(match);
+      setAdminSession({ user: safe, token: `local-${match.id}` });
+      setStaffUsers(localStaffUsers.map(stripPassword));
+      showToast(`Signed in as ${safe.fullName} (${safe.role.toUpperCase()})`);
+      return { ok: true };
+    };
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        return loginLocally();
+      }
+      const data = (await res.json()) as {
+        token?: string;
+        user?: PublicStaffUser;
+        error?: string;
+      };
+      if (!res.ok || !data.user || !data.token) {
+        return { ok: false, error: data.error || 'Invalid staff credentials.' };
+      }
+      setAdminSession({ user: data.user, token: data.token });
+      if (data.user.permissions.includes('manage_users')) {
+        const usersRes = await fetch('/api/admin/users', {
+          headers: { 'x-admin-token': data.token },
+        });
+        if (usersRes.ok && isJsonResponse(usersRes)) {
+          const uData = (await usersRes.json()) as { users?: PublicStaffUser[] };
+          if (Array.isArray(uData.users)) {
+            setStaffUsers(uData.users);
+          }
+        }
+      }
+      showToast(`Signed in as ${data.user.fullName} (${data.user.role.toUpperCase()})`);
+      return { ok: true };
+    } catch {
+      return loginLocally();
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleAdminLogout = async () => {
+    const token = adminSession?.token;
+    setAdminSession(null);
+    showToast('Signed out of Operations Console');
+    if (token) {
+      try {
+        await fetch('/api/admin/logout', {
+          method: 'POST',
+          headers: { 'x-admin-token': token },
+        });
+      } catch {
+        // Ignore network errors on logout
+      }
+    }
+  };
+
+  const handleCreateStaffUser = async (payload: {
+    fullName: string;
+    username: string;
+    password?: string;
+    role: StaffRole;
+    assignedStore: StoreScope;
+    permissions: StaffPermission[];
+    active: boolean;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    setIsAdminBusy(true);
+    const createLocally = (): { ok: boolean; error?: string } => {
+      const cleanUsername = payload.username.trim().toLowerCase().replace(/\s+/g, '_');
+      if (localStaffUsers.some((u) => u.username.toLowerCase() === cleanUsername)) {
+        return { ok: false, error: `Username "${cleanUsername}" is already in use.` };
+      }
+      const created: StaffUser = {
+        id: `USR-${payload.role.toUpperCase()}-${Date.now().toString().slice(-4)}`,
+        fullName: payload.fullName.trim(),
+        username: cleanUsername,
+        password: (payload.password || 'team123').trim(),
+        role: payload.role,
+        assignedStore: payload.assignedStore,
+        permissions:
+          payload.permissions.length > 0
+            ? payload.permissions
+            : [...DEFAULT_ROLE_PERMISSIONS[payload.role]],
+        active: payload.active,
+        createdAt: new Date().toISOString(),
+        createdBy: adminSession?.user.username,
+      };
+      const next = [created, ...localStaffUsers];
+      setLocalStaffUsers(next);
+      setStaffUsers(next.map(stripPassword));
+      showToast(`Created ${created.role.toUpperCase()} account @${created.username}`);
+      return { ok: true };
+    };
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        return createLocally();
+      }
+      const data = (await res.json()) as { user?: PublicStaffUser; error?: string };
+      if (!res.ok || !data.user) {
+        return { ok: false, error: data.error || 'Could not create credential.' };
+      }
+      setStaffUsers((prev) => [data.user!, ...prev]);
+      showToast(`Created ${data.user.role.toUpperCase()} account @${data.user.username}`);
+      return { ok: true };
+    } catch {
+      return createLocally();
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleUpdateStaffUser = async (
+    id: string,
+    patch: {
+      fullName?: string;
+      password?: string;
+      role?: StaffRole;
+      assignedStore?: StoreScope;
+      permissions?: StaffPermission[];
+      active?: boolean;
+    }
+  ): Promise<{ ok: boolean; error?: string }> => {
+    setIsAdminBusy(true);
+    const updateLocally = (): { ok: boolean; error?: string } => {
+      const target = localStaffUsers.find((u) => u.id === id);
+      if (!target) return { ok: false, error: 'Account not found.' };
+      const nextRole = patch.role ?? target.role;
+      const nextActive = typeof patch.active === 'boolean' ? patch.active : target.active;
+      const nextPerms = patch.permissions ?? target.permissions;
+      const otherAdmin = localStaffUsers.some(
+        (u) =>
+          u.id !== id &&
+          u.active &&
+          u.role === 'admin' &&
+          u.permissions.includes('manage_users')
+      );
+      if (
+        !otherAdmin &&
+        (!nextActive || nextRole !== 'admin' || !nextPerms.includes('manage_users'))
+      ) {
+        return {
+          ok: false,
+          error: 'At least one active Admin with Team & User Credentials access must remain.',
+        };
+      }
+      const next = localStaffUsers.map((u) =>
+        u.id === id
+          ? {
+              ...u,
+              fullName: patch.fullName?.trim() || u.fullName,
+              password: patch.password?.trim() || u.password,
+              role: nextRole,
+              assignedStore: patch.assignedStore ?? u.assignedStore,
+              permissions: nextPerms,
+              active: nextActive,
+            }
+          : u
+      );
+      setLocalStaffUsers(next);
+      setStaffUsers(next.map(stripPassword));
+      if (adminSession?.user.id === id) {
+        const updatedSelf = next.find((u) => u.id === id);
+        if (updatedSelf) {
+          setAdminSession((prev) => (prev ? { ...prev, user: stripPassword(updatedSelf) } : null));
+        }
+      }
+      showToast('Updated staff permissions');
+      return { ok: true };
+    };
+
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: adminHeaders(),
+        body: JSON.stringify(patch),
+      });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        return updateLocally();
+      }
+      const data = (await res.json()) as { user?: PublicStaffUser; error?: string };
+      if (!res.ok || !data.user) {
+        showToast(data.error || 'Could not update staff account');
+        return { ok: false, error: data.error || 'Could not update staff account.' };
+      }
+      setStaffUsers((prev) => prev.map((u) => (u.id === id ? data.user! : u)));
+      if (adminSession?.user.id === id) {
+        setAdminSession((prev) => (prev ? { ...prev, user: data.user! } : null));
+      }
+      showToast(`Updated @${data.user.username}`);
+      return { ok: true };
+    } catch {
+      return updateLocally();
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleDeleteStaffUser = async (id: string) => {
+    setIsAdminBusy(true);
+    const deleteLocally = () => {
+      if (adminSession?.user.id === id) {
+        showToast('Cannot delete your own active account');
+        return;
+      }
+      const next = localStaffUsers.filter((u) => u.id !== id);
+      setLocalStaffUsers(next);
+      setStaffUsers(next.map(stripPassword));
+      showToast('Removed staff credential');
+    };
+
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: adminHeaders(),
+      });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        deleteLocally();
+        return;
+      }
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Could not remove user');
+        return;
+      }
+      setStaffUsers((prev) => prev.filter((u) => u.id !== id));
+      showToast('Removed staff credential');
+    } catch {
+      deleteLocally();
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  // =========================================================================
+  // ADMIN INVENTORY & CATALOG HANDLERS
+  // =========================================================================
+
   const handleCreateProduct = async (payload: Partial<Product>): Promise<boolean> => {
     setIsAdminBusy(true);
     const createLocally = () => {
@@ -448,7 +813,7 @@ export default function App() {
     try {
       const res = await fetch('/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify(payload),
       });
       if (res.status === 404 || !isJsonResponse(res)) {
@@ -510,7 +875,7 @@ export default function App() {
     try {
       const res = await fetch(`/api/products/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify(patch),
       });
       if (res.status === 404 || !isJsonResponse(res)) {
@@ -574,14 +939,15 @@ export default function App() {
     try {
       const res = await fetch(`/api/products/${id}/restock`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify(payload),
       });
       if (res.status === 404 || !isJsonResponse(res)) {
         return restockLocally();
       }
       if (!res.ok) {
-        showToast('Failed to update stock');
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Failed to update stock');
         return false;
       }
       const data = (await res.json()) as { product: Product };
@@ -597,9 +963,11 @@ export default function App() {
 
   const handleRefreshInventory = async (minPerSize = 10) => {
     setIsAdminBusy(true);
+    const actorStore = adminSession?.user.assignedStore || 'All Stores';
     const refreshLocally = () => {
       let refreshedCount = 0;
       const nextProducts = products.map((p) => {
+        if (actorStore !== 'All Stores' && p.storeLocation !== actorStore) return p;
         if (p.stock <= p.reorderLevel || Object.values(p.sizeStock).some((v) => v < minPerSize)) {
           const nextSizeStock: Record<string, number> = {};
           p.sizes.forEach((s) => {
@@ -626,7 +994,7 @@ export default function App() {
     try {
       const res = await fetch('/api/products/refresh-inventory', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify({ minPerSize }),
       });
       if (res.status === 404 || !isJsonResponse(res)) {
@@ -634,7 +1002,8 @@ export default function App() {
         return;
       }
       if (!res.ok) {
-        showToast('Failed to refresh low stock');
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Failed to refresh low stock');
         return;
       }
       const data = (await res.json()) as { products: Product[]; refreshedCount: number };
@@ -659,13 +1028,17 @@ export default function App() {
     };
 
     try {
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: adminHeaders(),
+      });
       if (res.status === 404 || !isJsonResponse(res)) {
         deleteLocally();
         return;
       }
       if (!res.ok) {
-        showToast('Failed to delete product');
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Failed to delete product');
         return;
       }
       setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -716,7 +1089,7 @@ export default function App() {
     try {
       const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify({ status }),
       });
       if (res.status === 404 || !isJsonResponse(res)) {
@@ -724,7 +1097,8 @@ export default function App() {
         return;
       }
       if (!res.ok) {
-        showToast('Could not update order status');
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Could not update order status');
         return;
       }
       const data = (await res.json()) as { order: OrderTrackingRecord };
@@ -743,6 +1117,60 @@ export default function App() {
   const bagCount = bag.reduce((s, i) => s + i.qty, 0);
 
   const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+
+  // Dedicated /admin Portal (Separate from customer storefront)
+  if (view === 'admin') {
+    return (
+      <div className="min-h-screen flex flex-col bg-white text-neutral-950 dark:bg-[#080808] dark:text-neutral-50 transition-colors">
+        {!adminSession ? (
+          <AdminLoginView
+            theme={theme}
+            isBusy={isAdminBusy}
+            onToggleTheme={toggleTheme}
+            onLogin={handleAdminLogin}
+            onBackToStore={() => navigateTo('home')}
+          />
+        ) : (
+          <AdminDashboardView
+            theme={theme}
+            currentUser={adminSession.user}
+            staffUsers={staffUsers}
+            products={products}
+            orders={trackingOrders}
+            isLoading={isLoadingData}
+            isBusy={isAdminBusy}
+            onToggleTheme={toggleTheme}
+            onLogout={handleAdminLogout}
+            onCreateProduct={handleCreateProduct}
+            onUpdateProduct={handleUpdateProduct}
+            onRestockProduct={handleRestockProduct}
+            onRefreshInventory={handleRefreshInventory}
+            onDeleteProduct={handleDeleteProduct}
+            onUpdateOrderStatus={handleUpdateOrderStatus}
+            onCreateStaffUser={handleCreateStaffUser}
+            onUpdateStaffUser={handleUpdateStaffUser}
+            onDeleteStaffUser={handleDeleteStaffUser}
+            onTrackOrder={(id) => {
+              setTrackedOrderId(id);
+              navigateTo('tracking');
+            }}
+            onOpenProduct={(id) => navigateTo('pdp', id)}
+            onBackToStore={() => navigateTo('home')}
+          />
+        )}
+
+        {toastMsg && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 bg-neutral-950 dark:bg-neutral-900 text-white text-xs sm:text-sm font-semibold rounded-md shadow-lg border border-neutral-800 dark:border-neutral-700 whitespace-nowrap"
+          >
+            {toastMsg}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-neutral-950 dark:bg-[#080808] dark:text-neutral-50 transition-colors">
@@ -882,37 +1310,14 @@ export default function App() {
             onBackHome={() => navigateTo('home')}
           />
         )}
-
-        {view === 'admin' && (
-          <AdminDashboardView
-            products={products}
-            orders={trackingOrders}
-            isLoading={isLoadingData}
-            isBusy={isAdminBusy}
-            onCreateProduct={handleCreateProduct}
-            onUpdateProduct={handleUpdateProduct}
-            onRestockProduct={handleRestockProduct}
-            onRefreshInventory={handleRefreshInventory}
-            onDeleteProduct={handleDeleteProduct}
-            onUpdateOrderStatus={handleUpdateOrderStatus}
-            onTrackOrder={(id) => {
-              setTrackedOrderId(id);
-              navigateTo('tracking');
-            }}
-            onOpenProduct={(id) => navigateTo('pdp', id)}
-            onBackToStore={() => navigateTo('home')}
-          />
-        )}
       </div>
 
-      {view !== 'admin' && (
-        <Footer
-          theme={theme}
-          onSelectCategory={handleSelectCategory}
-          onNavigate={(v) => navigateTo(v)}
-          onNotify={showToast}
-        />
-      )}
+      <Footer
+        theme={theme}
+        onSelectCategory={handleSelectCategory}
+        onNavigate={(v) => navigateTo(v)}
+        onNotify={showToast}
+      />
 
       <Overlays
         theme={theme}

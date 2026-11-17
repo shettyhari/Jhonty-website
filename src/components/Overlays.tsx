@@ -158,16 +158,6 @@ export function Overlays({
               >
                 Track Order
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onNavigate('admin');
-                  onCloseAll();
-                }}
-                className="text-left py-3.5 text-base font-semibold text-[#d98200] dark:text-[#faa619] hover:text-neutral-950 dark:hover:text-white"
-              >
-                Admin Console
-              </button>
             </nav>
           </div>
 
