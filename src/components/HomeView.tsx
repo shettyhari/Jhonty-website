@@ -32,13 +32,20 @@ interface HomeViewProps {
   onOpenStores: () => void;
 }
 
-const CATEGORY_TABS: Category[] = ['All', 'Women', 'Men', 'Kids', 'Shoes & Bags', 'Beauty'];
-const PRICE_CAPS = [499, 799, 999, 1499];
+const CATEGORY_TABS: Category[] = [
+  'All',
+  'Shirts & Polos',
+  'Denim & Chinos',
+  'Outerwear',
+  'Footwear',
+  'Accessories',
+];
+const PRICE_CAPS = [999, 1299, 1499, 1999];
 const OCCASIONS: { title: string; subtitle: string; occasion: Occasion }[] = [
-  { title: 'Workwear', subtitle: 'Tailored shirts, wraps & totes', occasion: 'Workwear' },
-  { title: 'Festive & Wedding', subtitle: 'Zari kurtas & glow palettes', occasion: 'Festive' },
-  { title: 'Casual Weekend', subtitle: 'Polos, ribbed knits & denim', occasion: 'Casual' },
-  { title: 'Active & Athleisure', subtitle: 'Cushioned runners & fleece', occasion: 'Active' },
+  { title: 'Workwear', subtitle: 'Giza shirts, overshirts & laptop totes', occasion: 'Workwear' },
+  { title: 'Casual Weekend', subtitle: 'Plaid overshirts, polos & stretch denim', occasion: 'Casual' },
+  { title: 'Active & Street', subtitle: 'Bomber jackets & cushioned runners', occasion: 'Active' },
+  { title: 'Evening & Smart', subtitle: 'Mandarin linen & tailored layers', occasion: 'Festive' },
 ];
 
 export function HomeView({
@@ -82,10 +89,10 @@ export function HomeView({
     Boolean(searchQuery);
 
   const activeFilterSummary = [
-    activeCategory !== 'All' ? `Department: ${activeCategory}` : null,
+    activeCategory !== 'All' ? `Category: ${activeCategory}` : null,
     activeBrand ? `Brand: ${activeBrand}` : null,
     activeMaxPrice ? `Under ${formatINR(activeMaxPrice)}` : null,
-    activeOccasion ? `Occasion: ${activeOccasion}` : null,
+    activeOccasion ? `Edit: ${activeOccasion}` : null,
     searchQuery ? `Search: "${searchQuery}"` : null,
   ]
     .filter(Boolean)
@@ -109,7 +116,7 @@ export function HomeView({
                 alt={slide.title}
                 className="absolute inset-0 w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/90 via-neutral-950/60 to-neutral-950/15" />
+              <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/92 via-neutral-950/60 to-neutral-950/15" />
 
               <div className="relative z-10 max-w-[1320px] w-full mx-auto px-6">
                 <div className="max-w-xl text-white">
@@ -176,16 +183,16 @@ export function HomeView({
         </div>
       </section>
 
-      {/* 2. Top Categories & Featured Brands */}
+      {/* 2. Menswear Departments & Featured Brands */}
       <section className="py-12 border-b border-neutral-200 bg-white">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-7">
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-neutral-950">
-                Shop by Department
+                Shop by Menswear Department
               </h2>
               <p className="text-sm text-neutral-600 mt-1">
-                Curated essentials across apparel, footwear, handbags, and beauty
+                Branded casualwear, tailored shirts, denim, and sneakers curated in Madhapur
               </p>
             </div>
             <button
@@ -194,11 +201,11 @@ export function HomeView({
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#d98200] transition-colors"
             >
               <MapPin className="w-4 h-4 text-[#d98200]" />
-              <span>Find a Lifestyle Store for Click &amp; Collect</span>
+              <span>Visit Hitech City Metro &amp; Madhapur Stores</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3.5 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
             {TOP_CATEGORIES.map((item) => (
               <button
                 key={item.label}
@@ -227,7 +234,7 @@ export function HomeView({
           <div className="pt-8 border-t border-neutral-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-700">
-                Top Brands on Lifestyle
+                Featured Labels at Jhonty Hub
               </h3>
               {activeBrand && (
                 <button
@@ -235,7 +242,7 @@ export function HomeView({
                   onClick={onResetFilters}
                   className="text-xs font-semibold text-[#d98200] hover:underline"
                 >
-                  Show all brands
+                  Show all labels
                 </button>
               )}
             </div>
@@ -272,16 +279,16 @@ export function HomeView({
         </div>
       </section>
 
-      {/* 3. Deal Corner & Interactive Product Catalog */}
+      {/* 3. Jhonty Hub Value Rack & Catalog */}
       <section id="catalog-section" className="py-12 bg-neutral-50">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-neutral-950">
-                Deal Corner &amp; New Arrivals
+                Jhonty Hub Value Collection
               </h2>
               <p className="text-sm text-neutral-600 mt-1">
-                Select any style to view full specifications, check pincode delivery, or buy now
+                Up to 50% off showroom MRPs · Select any piece for sizing, pincode check, or pickup
               </p>
             </div>
 
@@ -305,7 +312,6 @@ export function HomeView({
             </div>
           </div>
 
-          {/* Mobile Search + Price Ceiling Filters */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-semibold text-neutral-600 mr-1">Price Point:</span>
@@ -333,7 +339,7 @@ export function HomeView({
                 type="search"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search brands, styles..."
+                placeholder="Search shirts, denim, brands..."
                 aria-label="Search catalog mobile"
                 className="w-full h-10 pl-3.5 pr-9 text-sm bg-white border border-neutral-200 rounded-md focus:border-[#faa619] focus:outline-none"
               />
@@ -364,7 +370,7 @@ export function HomeView({
                 No styles match your current selection
               </h3>
               <p className="text-sm text-neutral-600 mb-5">
-                Try clearing active filters or exploring another department.
+                Try clearing active filters or exploring another menswear department.
               </p>
               <button
                 type="button"
@@ -392,15 +398,15 @@ export function HomeView({
         </div>
       </section>
 
-      {/* 4. Shop By Occasion */}
+      {/* 4. Style Edits */}
       <section className="py-12 bg-white border-t border-neutral-200">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="mb-7">
             <h2 className="text-2xl font-bold tracking-tight text-neutral-950">
-              Shop by Occasion
+              Shop by Wardrobe Edit
             </h2>
             <p className="text-sm text-neutral-600 mt-1">
-              Dressing curated for workdays, celebrations, and weekends
+              Everyday comfort, workdays in Hitech City, and weekend street looks
             </p>
           </div>
 

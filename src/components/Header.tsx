@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Heart, MapPin, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { Heart, MapPin, Menu, Package, Search, ShoppingBag, User, X } from 'lucide-react';
 import { Category, ViewMode } from '../types';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   activeCategory: Category;
@@ -21,11 +22,10 @@ interface HeaderProps {
 }
 
 const NAV_LINKS: { label: string; category: Category }[] = [
-  { label: 'Women', category: 'Women' },
-  { label: 'Men', category: 'Men' },
-  { label: 'Kids', category: 'Kids' },
-  { label: 'Shoes & Bags', category: 'Shoes & Bags' },
-  { label: 'Beauty', category: 'Beauty' },
+  { label: 'Shirts & Polos', category: 'Shirts & Polos' },
+  { label: 'Denim & Chinos', category: 'Denim & Chinos' },
+  { label: 'Outerwear', category: 'Outerwear' },
+  { label: 'Footwear', category: 'Footwear' },
 ];
 
 export function Header({
@@ -51,27 +51,35 @@ export function Header({
     <>
       {!promoDismissed && (
         <div className="bg-neutral-950 text-white text-xs h-9 flex items-center justify-between px-4 sm:px-6 border-b border-neutral-800">
-          <div className="hidden lg:flex items-center gap-4 text-neutral-300 whitespace-nowrap shrink-0">
-            <span>Free Shipping above ₹999</span>
+          <div className="hidden lg:flex items-center gap-3 text-neutral-300 whitespace-nowrap shrink-0">
+            <span>Madhapur &amp; Hitech City Metro, Hyderabad</span>
             <span aria-hidden="true">·</span>
-            <span>Click &amp; Collect in 90+ Stores</span>
+            <span>Opens Daily 10:00 AM</span>
           </div>
           <button
             type="button"
             onClick={() => onSelectCategory('All')}
             className="mx-auto lg:mx-0 text-center font-medium text-neutral-100 hover:text-[#faa619] transition-colors truncate"
           >
-            Limited Time: Use <span className="text-[#faa619] font-semibold">SALE15</span> for 15% Off or{' '}
-            <span className="text-[#faa619] font-semibold">LS1000</span> above ₹3,999
+            Branded Value Drops: Use <span className="text-[#faa619] font-semibold">JHONTY15</span>{' '}
+            for 15% Off or <span className="text-[#faa619] font-semibold">JH1000</span> above ₹3,999
           </button>
           <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => onNavigate('tracking')}
+              className="hidden sm:inline-flex items-center gap-1 text-neutral-300 hover:text-[#faa619] transition-colors whitespace-nowrap"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Track Order</span>
+            </button>
             <button
               type="button"
               onClick={() => onNavigate('stores')}
               className="hidden sm:inline-flex items-center gap-1 text-neutral-300 hover:text-[#faa619] transition-colors whitespace-nowrap"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Store Locator</span>
+              <span>Hyderabad Stores</span>
             </button>
             <button
               type="button"
@@ -86,7 +94,7 @@ export function Header({
       )}
 
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-neutral-200">
-        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 lg:gap-8">
+        <div className="max-w-[1320px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 lg:gap-6">
           {/* Zone 1: Brand Wordmark + Mobile Trigger */}
           <div className="flex items-center gap-3 shrink-0">
             <button
@@ -104,15 +112,15 @@ export function Header({
                 e.preventDefault();
                 onResetHome();
               }}
-              className="text-2xl font-bold tracking-tight text-neutral-950 whitespace-nowrap shrink-0 pb-0.5 border-b-2 border-[#faa619]"
+              aria-label="Jhonty Hub Home"
             >
-              lifestyle
+              <BrandLogo />
             </a>
           </div>
 
           {/* Zone 2: Clean Single-Line Navigation Links */}
           <nav
-            className="hidden lg:flex items-center gap-6 h-full"
+            className="hidden lg:flex items-center gap-5 h-full"
             aria-label="Primary departments"
           >
             {NAV_LINKS.map((item) => {
@@ -143,6 +151,17 @@ export function Header({
             >
               Stores
             </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('tracking')}
+              className={`h-full inline-flex items-center text-sm font-semibold whitespace-nowrap shrink-0 border-b-2 transition-colors ${
+                activeView === 'tracking'
+                  ? 'text-[#d98200] border-[#faa619]'
+                  : 'text-neutral-800 border-transparent hover:text-[#d98200]'
+              }`}
+            >
+              Track Order
+            </button>
           </nav>
 
           {/* Zone 3: Search & Primary Actions */}
@@ -152,13 +171,13 @@ export function Header({
                 e.preventDefault();
                 onSearchSubmit();
               }}
-              className="hidden md:block relative w-56 xl:w-72"
+              className="hidden md:block relative w-52 xl:w-64"
             >
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search brands, styles..."
+                placeholder="Search shirts, denim, brands..."
                 aria-label="Search catalog"
                 className="w-full h-10 pl-3.5 pr-9 text-sm bg-neutral-100 border border-neutral-200 rounded-md focus:bg-white focus:border-[#faa619] focus:outline-none transition-colors"
               />

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PRODUCTS, STORES_DATA } from './data/catalog';
 import {
+  OrderTrackingRecord,
+  SAMPLE_TRACKING_ORDERS,
+  buildTrackingFromReceipt,
+} from './data/tracking';
+import {
   BagItem,
   Category,
   Occasion,
@@ -14,6 +19,7 @@ import { HomeView } from './components/HomeView';
 import { ProductDetailView } from './components/ProductDetailView';
 import { StoreLocatorView } from './components/StoreLocatorView';
 import { CheckoutView } from './components/CheckoutView';
+import { OrderTrackingView } from './components/OrderTrackingView';
 import { Overlays } from './components/Overlays';
 import { Footer } from './components/Footer';
 
@@ -35,13 +41,17 @@ export default function App() {
   const [activeOccasion, setActiveOccasion] = useState<Occasion | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [bag, setBag] = useState<BagItem[]>(() => loadStored('ls_bag', []));
-  const [wishlistIds, setWishlistIds] = useState<number[]>(() => loadStored('ls_wishlist', []));
+  const [bag, setBag] = useState<BagItem[]>(() => loadStored('jh_bag', []));
+  const [wishlistIds, setWishlistIds] = useState<number[]>(() => loadStored('jh_wishlist', []));
   const [selectedStoreId, setSelectedStoreId] = useState<string>(() =>
-    loadStored('ls_store_id', 'BLR-1')
+    loadStored('jh_store_id', 'HYD-HTC')
   );
-  const [userName, setUserName] = useState<string | null>(() => loadStored('ls_user', null));
+  const [userName, setUserName] = useState<string | null>(() => loadStored('jh_user', null));
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [trackingOrders, setTrackingOrders] = useState<OrderTrackingRecord[]>(() =>
+    loadStored('jh_orders', SAMPLE_TRACKING_ORDERS)
+  );
+  const [trackedOrderId, setTrackedOrderId] = useState<string | null>(null);
 
   const [bagOpen, setBagOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
@@ -53,27 +63,33 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('ls_bag', JSON.stringify(bag));
+      localStorage.setItem('jh_bag', JSON.stringify(bag));
     } catch {}
   }, [bag]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('ls_wishlist', JSON.stringify(wishlistIds));
+      localStorage.setItem('jh_wishlist', JSON.stringify(wishlistIds));
     } catch {}
   }, [wishlistIds]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('ls_store_id', JSON.stringify(selectedStoreId));
+      localStorage.setItem('jh_store_id', JSON.stringify(selectedStoreId));
     } catch {}
   }, [selectedStoreId]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('ls_user', JSON.stringify(userName));
+      localStorage.setItem('jh_user', JSON.stringify(userName));
     } catch {}
   }, [userName]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('jh_orders', JSON.stringify(trackingOrders));
+    } catch {}
+  }, [trackingOrders]);
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -88,6 +104,8 @@ export default function App() {
         setView('stores');
       } else if (h === '#checkout') {
         setView('checkout');
+      } else if (h === '#tracking') {
+        setView('tracking');
       } else {
         setView('home');
       }
@@ -123,6 +141,8 @@ export default function App() {
       window.history.replaceState(null, '', '#stores');
     } else if (nextView === 'checkout') {
       window.history.replaceState(null, '', '#checkout');
+    } else if (nextView === 'tracking') {
+      window.history.replaceState(null, '', '#tracking');
     } else {
       window.history.replaceState(null, '', '#home');
     }
@@ -236,11 +256,11 @@ export default function App() {
 
   const handleApplyCoupon = (rawCode: string) => {
     const code = rawCode.trim().toUpperCase();
-    if (code === 'SALE15' || code === 'LS1000') {
+    if (code === 'JHONTY15' || code === 'JH1000') {
       setCoupon(code);
       showToast(`Promo code ${code} applied`);
     } else {
-      showToast('Try promo code SALE15 or LS1000');
+      showToast('Try promo code JHONTY15 or JH1000');
     }
   };
 
@@ -253,6 +273,9 @@ export default function App() {
   };
 
   const handleCompleteOrder = (receipt: OrderReceipt) => {
+    const record = buildTrackingFromReceipt(receipt);
+    setTrackingOrders((prev) => [record, ...prev]);
+    setTrackedOrderId(receipt.orderId);
     setBag([]);
     setCoupon(null);
     showToast(`Order ${receipt.orderId} confirmed!`);
@@ -382,7 +405,19 @@ export default function App() {
             onSelectStoreId={setSelectedStoreId}
             onApplyCoupon={handleApplyCoupon}
             onCompleteOrder={handleCompleteOrder}
+            onTrackOrder={(id) => {
+              setTrackedOrderId(id);
+              navigateTo('tracking');
+            }}
             onBackToShopping={() => navigateTo('home')}
+          />
+        )}
+
+        {view === 'tracking' && (
+          <OrderTrackingView
+            orders={trackingOrders}
+            initialOrderId={trackedOrderId}
+            onBackHome={() => navigateTo('home')}
           />
         )}
       </div>

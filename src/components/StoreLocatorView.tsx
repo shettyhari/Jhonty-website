@@ -45,14 +45,14 @@ export function StoreLocatorView({
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#faa619] mb-2">
-              90+ Stores Across India
+              Madhapur · Hitech City Metro · Kukatpally
             </p>
             <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
-              Lifestyle Store Locator
+              Jhonty Hub Hyderabad Stores
             </h1>
             <p className="text-sm text-neutral-300 mt-2 max-w-xl">
-              Locate your nearest Lifestyle flagship store for free Click &amp; Collect pickup,
-              in-store alterations, and instant returns.
+              Visit our flagship store on the 1st Floor Lower Concourse at Hitech City Metro
+              Station or our Venkata Ramana Colony hub in Madhapur — open daily from 10:00 AM.
             </p>
           </div>
           <button
@@ -104,7 +104,7 @@ export function StoreLocatorView({
             {filteredStores.length === 0 ? (
               <div className="border border-neutral-200 rounded-lg p-8 text-center">
                 <p className="text-sm font-semibold text-neutral-900 mb-1">
-                  No Lifestyle stores matched "{query}"
+                  No Jhonty Hub stores matched "{query}"
                 </p>
                 <p className="text-xs text-neutral-500 mb-4">
                   Try clearing your search or selecting another city.

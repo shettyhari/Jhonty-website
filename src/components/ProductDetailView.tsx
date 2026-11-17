@@ -173,7 +173,7 @@ export function ProductDetailView({
                 <span className="text-sm font-bold text-[#d98200]">{discountPct}% OFF</span>
               </div>
               <p className="text-xs font-medium text-emerald-700 mt-1.5">
-                Inclusive of all taxes · Earn {rewardPoints} Landmark Reward Points
+                Inclusive of all taxes · Earn {rewardPoints} Jhonty Club Points
               </p>
             </div>
 
@@ -277,7 +277,7 @@ export function ProductDetailView({
                   inputMode="numeric"
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
-                  placeholder="Enter 6-digit pincode (e.g. 560034)"
+                  placeholder="Enter 6-digit pincode (e.g. 500081)"
                   aria-label="Delivery pincode"
                   className="flex-1 h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none tabular-nums"
                 />
@@ -330,7 +330,7 @@ export function ProductDetailView({
 
               <div className="flex items-center gap-2 text-xs text-neutral-500 pt-2">
                 <ShieldCheck className="w-4 h-4 text-neutral-700 shrink-0" />
-                <span>100% Authentic Lifestyle Store Merchandise · 30-Day Return to Store</span>
+                <span>100% Authentic Jhonty Hub Merchandise · Easy Exchange at Madhapur Stores</span>
               </div>
             </div>
           </div>

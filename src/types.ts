@@ -1,6 +1,13 @@
-export type Category = 'All' | 'Women' | 'Men' | 'Kids' | 'Shoes & Bags' | 'Beauty';
+export type Category =
+  | 'All'
+  | 'Shirts & Polos'
+  | 'Denim & Chinos'
+  | 'Outerwear'
+  | 'Footwear'
+  | 'Accessories';
+
 export type Occasion = 'Workwear' | 'Festive' | 'Casual' | 'Active';
-export type ViewMode = 'home' | 'pdp' | 'stores' | 'checkout';
+export type ViewMode = 'home' | 'pdp' | 'stores' | 'checkout' | 'tracking';
 export type DeliveryMode = 'home' | 'pickup';
 export type PaymentMode = 'upi' | 'card' | 'netbanking' | 'cod';
 

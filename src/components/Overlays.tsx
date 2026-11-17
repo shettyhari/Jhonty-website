@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 import { PRODUCTS, formatINR } from '../data/catalog';
 import { BagItem, Category, Product, ViewMode } from '../types';
+import { BrandLogo } from './BrandLogo';
 import { ResilientImage } from './ResilientImage';
 
 interface OverlaysProps {
@@ -75,8 +76,8 @@ export function Overlays({
 
   const subtotal = bag.reduce((s, item) => s + item.price * item.qty, 0);
   let discount = 0;
-  if (coupon === 'SALE15') discount = Math.round(subtotal * 0.15);
-  if (coupon === 'LS1000' && subtotal >= 3999) discount = 1000;
+  if (coupon === 'JHONTY15') discount = Math.round(subtotal * 0.15);
+  if (coupon === 'JH1000' && subtotal >= 3999) discount = 1000;
   const total = Math.max(0, subtotal - discount);
 
   const wishlistProducts = PRODUCTS.filter((p) => wishlistIds.includes(p.id));
@@ -101,9 +102,7 @@ export function Overlays({
       {mobileMenuOpen && (
         <aside className="fixed inset-y-0 left-0 w-72 bg-white z-10 p-5 flex flex-col shadow-xl">
           <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
-            <span className="text-xl font-bold tracking-tight text-neutral-950 pb-0.5 border-b-2 border-[#faa619]">
-              lifestyle
-            </span>
+            <BrandLogo compact />
             <button
               type="button"
               onClick={onCloseAll}
@@ -114,7 +113,9 @@ export function Overlays({
             </button>
           </div>
           <nav className="flex flex-col divide-y divide-neutral-100 mt-2">
-            {(['Women', 'Men', 'Kids', 'Shoes & Bags', 'Beauty'] as Category[]).map((cat) => (
+            {(
+              ['Shirts & Polos', 'Denim & Chinos', 'Outerwear', 'Footwear', 'Accessories'] as Category[]
+            ).map((cat) => (
               <button
                 key={cat}
                 type="button"
@@ -136,6 +137,16 @@ export function Overlays({
               className="text-left py-3.5 text-base font-semibold text-neutral-900 hover:text-[#d98200]"
             >
               Store Locator
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('tracking');
+                onCloseAll();
+              }}
+              className="text-left py-3.5 text-base font-semibold text-neutral-900 hover:text-[#d98200]"
+            >
+              Track Order
             </button>
           </nav>
         </aside>
@@ -246,7 +257,7 @@ export function Overlays({
                   type="text"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
-                  placeholder="Promo code (SALE15 or LS1000)"
+                  placeholder="Promo code (JHONTY15 or JH1000)"
                   className="flex-1 h-9 px-3 bg-white border border-neutral-200 rounded-md text-xs uppercase focus:border-[#faa619] focus:outline-none"
                 />
                 <button
@@ -467,7 +478,7 @@ export function Overlays({
             </button>
           </div>
           <p className="text-xs text-neutral-600 mb-4">
-            Standard body measurements across Lifestyle apparel collections:
+            Standard body measurements across Jhonty Hub menswear collections:
           </p>
           <table className="w-full text-xs border-collapse tabular-nums">
             <thead>
@@ -513,7 +524,7 @@ export function Overlays({
             </button>
           </div>
           <p className="text-sm text-neutral-600 mb-5">
-            Access Landmark Rewards, saved wishlists, and faster store pickup checkout.
+            Access Jhonty Club member deals, saved wishlists, and faster Madhapur store pickup.
           </p>
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>

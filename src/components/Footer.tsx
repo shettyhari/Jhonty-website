@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Category, ViewMode } from '../types';
+import { BrandLogo } from './BrandLogo';
 
 interface FooterProps {
   onSelectCategory: (cat: Category) => void;
@@ -13,7 +14,7 @@ export function Footer({ onSelectCategory, onNavigate, onNotify }: FooterProps) 
   const handleNewsletter = (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    onNotify(`Subscribed ${email.trim()} to Lifestyle offers & Landmark Rewards`);
+    onNotify(`Subscribed ${email.trim()} to Jhonty Hub drops & value deals`);
     setEmail('');
   };
 
@@ -24,10 +25,10 @@ export function Footer({ onSelectCategory, onNavigate, onNotify }: FooterProps) 
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h3 className="text-lg font-bold text-neutral-950">
-              Subscribe to Lifestyle offers &amp; style edits
+              Get Jhonty Hub restock alerts &amp; value drops
             </h3>
             <p className="text-sm text-neutral-600 mt-1">
-              Get early access to seasonal sales, Landmark Rewards perks, and new drops.
+              Fresh branded menswear arrivals at Madhapur &amp; Hitech City Metro every week.
             </p>
           </div>
           <form onSubmit={handleNewsletter} className="flex gap-2.5 w-full md:w-auto md:min-w-[400px]">
@@ -50,101 +51,118 @@ export function Footer({ onSelectCategory, onNavigate, onNotify }: FooterProps) 
         </div>
       </div>
 
-      {/* Links & Contact */}
+      {/* Links & Flagship Location */}
       <div className="bg-white py-12">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 pb-10 border-b border-neutral-200 text-sm">
             <div>
-              <h4 className="font-bold text-neutral-950 mb-3.5">Women</h4>
+              <h4 className="font-bold text-neutral-950 mb-3.5">Menswear</h4>
               <ul className="space-y-2 text-neutral-600">
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Women')} className="hover:text-[#d98200]">
-                    Ethnic &amp; Fusion Wear
+                  <button
+                    type="button"
+                    onClick={() => onSelectCategory('Shirts & Polos')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Overshirts, Shirts &amp; Polos
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Women')} className="hover:text-[#d98200]">
-                    Tops, Tees &amp; Denim
+                  <button
+                    type="button"
+                    onClick={() => onSelectCategory('Denim & Chinos')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Stretch Denim &amp; Chinos
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Women')} className="hover:text-[#d98200]">
-                    Dresses &amp; Workwear
+                  <button
+                    type="button"
+                    onClick={() => onSelectCategory('Outerwear')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Bomber Jackets &amp; Shackets
                   </button>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-neutral-950 mb-3.5">Men</h4>
+              <h4 className="font-bold text-neutral-950 mb-3.5">Footwear &amp; Carry</h4>
               <ul className="space-y-2 text-neutral-600">
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Men')} className="hover:text-[#d98200]">
-                    Formal &amp; Casual Shirts
+                  <button
+                    type="button"
+                    onClick={() => onSelectCategory('Footwear')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Running &amp; Casual Sneakers
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Men')} className="hover:text-[#d98200]">
-                    Polos &amp; T-Shirts
-                  </button>
-                </li>
-                <li>
-                  <button type="button" onClick={() => onSelectCategory('Men')} className="hover:text-[#d98200]">
-                    Activewear &amp; Chinos
+                  <button
+                    type="button"
+                    onClick={() => onSelectCategory('Accessories')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Laptop Totes &amp; Everyday Carry
                   </button>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-neutral-950 mb-3.5">Kids, Shoes &amp; Beauty</h4>
+              <h4 className="font-bold text-neutral-950 mb-3.5">Services</h4>
               <ul className="space-y-2 text-neutral-600">
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Kids')} className="hover:text-[#d98200]">
-                    Boys &amp; Girls Apparel
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('stores')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Hyderabad Store Locator
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Shoes & Bags')} className="hover:text-[#d98200]">
-                    Footwear &amp; Tote Bags
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('tracking')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Track Order
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => onSelectCategory('Beauty')} className="hover:text-[#d98200]">
-                    Makeup &amp; Fragrances
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('stores')}
+                    className="hover:text-[#d98200]"
+                  >
+                    Hitech City Click &amp; Collect
                   </button>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-neutral-950 mb-3.5">Stores &amp; Help</h4>
-              <ul className="space-y-2 text-neutral-600">
-                <li>
-                  <button type="button" onClick={() => onNavigate('stores')} className="hover:text-[#d98200]">
-                    Store Locator
-                  </button>
-                </li>
-                <li>
-                  <button type="button" onClick={() => onNavigate('stores')} className="hover:text-[#d98200]">
-                    Click &amp; Collect
-                  </button>
-                </li>
-                <li>
-                  <span className="text-neutral-500">Toll-Free: 1800-123-1555</span>
-                </li>
-              </ul>
+              <h4 className="font-bold text-neutral-950 mb-3.5">Madhapur Flagship</h4>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                1st Floor, Lower Concourse Level, Hitech City Metro Station, Silicon Valley,
+                Madhapur, Hyderabad - 500081
+              </p>
+              <p className="text-xs font-semibold text-neutral-900 mt-2">
+                Opens Daily · 10:00 AM – 10:00 PM
+              </p>
             </div>
           </div>
 
           <div className="pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-neutral-500">
-            <div className="flex items-center gap-3">
-              <span className="text-lg font-bold tracking-tight text-neutral-950 pb-0.5 border-b-2 border-[#faa619]">
-                lifestyle
-              </span>
-              <span>100% Authentic Products · 30-Day Easy Returns</span>
+            <div className="flex items-center gap-4">
+              <BrandLogo compact />
+              <span>Branded Menswear · Madhapur, Hyderabad</span>
             </div>
-            <p>&copy; 2026 Lifestyle Stores India · Terms &amp; Conditions · Privacy Policy</p>
+            <p>&copy; 2026 Jhonty Hub Hyderabad · All Rights Reserved</p>
           </div>
         </div>
       </div>

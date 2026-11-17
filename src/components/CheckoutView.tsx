@@ -18,6 +18,7 @@ interface CheckoutViewProps {
   onSelectStoreId: (id: string) => void;
   onApplyCoupon: (code: string) => void;
   onCompleteOrder: (receipt: OrderReceipt) => void;
+  onTrackOrder: (orderId: string) => void;
   onBackToShopping: () => void;
 }
 
@@ -28,6 +29,7 @@ export function CheckoutView({
   onSelectStoreId,
   onApplyCoupon,
   onCompleteOrder,
+  onTrackOrder,
   onBackToShopping,
 }: CheckoutViewProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -47,13 +49,13 @@ export function CheckoutView({
     pincode: '',
     addressLine: '',
     city: '',
-    state: 'Karnataka',
+    state: 'Telangana',
   });
 
   const subtotal = bag.reduce((sum, item) => sum + item.price * item.qty, 0);
   let discount = 0;
-  if (coupon === 'SALE15') discount = Math.round(subtotal * 0.15);
-  if (coupon === 'LS1000' && subtotal >= 3999) discount = 1000;
+  if (coupon === 'JHONTY15') discount = Math.round(subtotal * 0.15);
+  if (coupon === 'JH1000' && subtotal >= 3999) discount = 1000;
   const total = Math.max(0, subtotal - discount);
 
   const handleStep1Submit = (e: FormEvent) => {
@@ -96,7 +98,7 @@ export function CheckoutView({
       return;
     }
 
-    const orderId = `LS-${Math.floor(100000 + Math.random() * 900000)}`;
+    const orderId = `JH-${Math.floor(100000 + Math.random() * 900000)}`;
     const confirmed: OrderReceipt = {
       orderId,
       placedAt: new Date().toLocaleDateString('en-IN', {
@@ -224,13 +226,22 @@ export function CheckoutView({
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={onBackToShopping}
-              className="px-7 py-3 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
-            >
-              Continue Shopping
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => onTrackOrder(receipt.orderId)}
+                className="px-7 py-3 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
+              >
+                Track This Order
+              </button>
+              <button
+                type="button"
+                onClick={onBackToShopping}
+                className="px-7 py-3 border border-neutral-950 text-neutral-950 hover:bg-neutral-950 hover:text-white text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
           </div>
         ) : bag.length === 0 ? (
           <div className="max-w-lg mx-auto bg-white border border-neutral-200 rounded-lg p-10 text-center">
@@ -303,7 +314,7 @@ export function CheckoutView({
                             <span>Free Click &amp; Collect</span>
                           </div>
                           <p className="text-xs text-neutral-600 mt-1">
-                            Ready within 4 hours at your selected Lifestyle Store.
+                            Ready within 2 hours at our Madhapur or Kukatpally Hub.
                           </p>
                         </div>
                       </label>
@@ -352,7 +363,7 @@ export function CheckoutView({
                           required
                           value={address.name}
                           onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                          placeholder="e.g. Ananya Sharma"
+                          placeholder="e.g. Karthik Reddy"
                           className="w-full h-11 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
                         />
                       </div>
@@ -385,7 +396,7 @@ export function CheckoutView({
                               onChange={(e) =>
                                 setAddress({ ...address, addressLine: e.target.value })
                               }
-                              placeholder="e.g. 402, Palm Grove Residency, 12th Main Indiranagar"
+                              placeholder="e.g. Plot 24, Venkata Ramana Colony, Madhapur"
                               className="w-full h-11 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
                             />
                           </div>
@@ -401,7 +412,7 @@ export function CheckoutView({
                               inputMode="numeric"
                               value={address.pincode}
                               onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
-                              placeholder="e.g. 560038"
+                              placeholder="e.g. 500081"
                               className="w-full h-11 px-3 border border-neutral-200 rounded-md text-sm tabular-nums focus:border-[#faa619] focus:outline-none"
                             />
                           </div>
@@ -415,7 +426,7 @@ export function CheckoutView({
                               required
                               value={address.city}
                               onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                              placeholder="e.g. Bengaluru"
+                              placeholder="e.g. Hyderabad"
                               className="w-full h-11 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
                             />
                           </div>
@@ -693,7 +704,7 @@ export function CheckoutView({
                   type="text"
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
-                  placeholder="Promo code (SALE15 / LS1000)"
+                  placeholder="Promo code (JHONTY15 / JH1000)"
                   className="flex-1 h-9 px-2.5 border border-neutral-200 rounded-md text-xs uppercase focus:border-[#faa619] focus:outline-none"
                 />
                 <button
