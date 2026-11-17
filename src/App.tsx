@@ -330,14 +330,41 @@ export default function App() {
     navigateTo('checkout');
   };
 
+  const sumSizeStock = (sizeStock: Record<string, number>) =>
+    Object.values(sizeStock).reduce((sum, n) => sum + Math.max(0, Number(n) || 0), 0);
+
+  const isJsonResponse = (res: Response) =>
+    (res.headers.get('content-type') || '').includes('application/json');
+
   const handleCompleteOrder = async (receipt: OrderReceipt) => {
+    const deductLocally = () => {
+      setProducts((prev) =>
+        prev.map((prod) => {
+          const orderedItems = receipt.items.filter((i) => i.id === prod.id);
+          if (orderedItems.length === 0) return prod;
+          const nextSizeStock = { ...prod.sizeStock };
+          orderedItems.forEach((item) => {
+            nextSizeStock[item.size] = Math.max(0, (nextSizeStock[item.size] ?? 0) - item.qty);
+          });
+          return {
+            ...prod,
+            sizeStock: nextSizeStock,
+            stock: sumSizeStock(nextSizeStock),
+            updatedAt: new Date().toISOString(),
+          };
+        })
+      );
+      const fallback = buildTrackingFromReceipt(receipt);
+      setTrackingOrders((prev) => [fallback, ...prev]);
+    };
+
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(receipt),
       });
-      if (res.ok) {
+      if (res.ok && isJsonResponse(res)) {
         const data = (await res.json()) as {
           order: OrderTrackingRecord;
           products: Product[];
@@ -345,12 +372,10 @@ export default function App() {
         setTrackingOrders((prev) => [data.order, ...prev]);
         setProducts(data.products);
       } else {
-        const fallback = buildTrackingFromReceipt(receipt);
-        setTrackingOrders((prev) => [fallback, ...prev]);
+        deductLocally();
       }
     } catch {
-      const fallback = buildTrackingFromReceipt(receipt);
-      setTrackingOrders((prev) => [fallback, ...prev]);
+      deductLocally();
     }
     setTrackedOrderId(receipt.orderId);
     setBag([]);
@@ -358,15 +383,69 @@ export default function App() {
     showToast(`Order ${receipt.orderId} confirmed!`);
   };
 
-  // Admin Backend Handlers
+  // Admin Backend Handlers (with static-host fallback if /api/* is absent)
   const handleCreateProduct = async (payload: Partial<Product>): Promise<boolean> => {
     setIsAdminBusy(true);
+    const createLocally = () => {
+      const nextId = products.reduce((max, p) => Math.max(max, p.id), 0) + 1;
+      const sizes =
+        Array.isArray(payload.sizes) && payload.sizes.length > 0
+          ? payload.sizes
+          : ['S', 'M', 'L', 'XL'];
+      const sizeStock: Record<string, number> = {};
+      sizes.forEach((s) => {
+        const v = payload.sizeStock?.[s];
+        sizeStock[s] = typeof v === 'number' && v >= 0 ? v : 10;
+      });
+      const created: Product = {
+        id: nextId,
+        sku:
+          payload.sku?.trim() ||
+          `JH-${String(payload.category || 'GEN')
+            .slice(0, 2)
+            .toUpperCase()}-${100 + nextId}`,
+        brand: (payload.brand || 'JHONTY ORIGINALS').trim().toUpperCase(),
+        title: (payload.title || 'New Product').trim(),
+        category: payload.category || 'Shirts & Polos',
+        occasion: payload.occasion || 'Casual',
+        price: Math.max(1, Number(payload.price) || 999),
+        mrp: Math.max(Number(payload.price) || 999, Number(payload.mrp) || 1999),
+        rating: payload.rating || '4.7',
+        reviews: payload.reviews ?? 1,
+        sizes,
+        sizeStock,
+        stock: sumSizeStock(sizeStock),
+        reorderLevel: typeof payload.reorderLevel === 'number' ? payload.reorderLevel : 10,
+        storeLocation: payload.storeLocation || 'Hitech City Metro',
+        updatedAt: new Date().toISOString(),
+        colors: payload.colors?.length
+          ? payload.colors
+          : [{ name: 'Signature Black', hex: '#18181b' }],
+        fabric: payload.fabric?.trim() || '100% Combed Cotton',
+        fit: payload.fit?.trim() || 'Regular Fit',
+        care: payload.care?.trim() || 'Machine Wash Cold',
+        origin: payload.origin?.trim() || 'Made in India',
+        description:
+          payload.description?.trim() ||
+          'Curated Jhonty Hub branded menswear piece crafted for everyday comfort.',
+        gallery: payload.gallery?.length
+          ? payload.gallery
+          : ['/src/assets/images/jhonty_mens_overshirt_1794941649529.jpg'],
+      };
+      setProducts((prev) => [created, ...prev]);
+      showToast(`Created ${created.sku} (${created.brand})`);
+      return true;
+    };
+
     try {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        return createLocally();
+      }
       if (!res.ok) {
         const err = (await res.json()) as { error?: string };
         showToast(err.error || 'Could not create product');
@@ -377,8 +456,7 @@ export default function App() {
       showToast(`Created ${data.product.sku} (${data.product.brand})`);
       return true;
     } catch {
-      showToast('Backend unreachable while creating product');
-      return false;
+      return createLocally();
     } finally {
       setIsAdminBusy(false);
     }
@@ -386,12 +464,50 @@ export default function App() {
 
   const handleUpdateProduct = async (id: number, patch: Partial<Product>): Promise<boolean> => {
     setIsAdminBusy(true);
+    const updateLocally = () => {
+      let updatedSku = '';
+      setProducts((prev) =>
+        prev.map((existing) => {
+          if (existing.id !== id) return existing;
+          const updatedSizes =
+            Array.isArray(patch.sizes) && patch.sizes.length > 0 ? patch.sizes : existing.sizes;
+          const mergedSizeStock: Record<string, number> = {};
+          updatedSizes.forEach((size) => {
+            if (patch.sizeStock && typeof patch.sizeStock[size] === 'number') {
+              mergedSizeStock[size] = Math.max(0, patch.sizeStock[size]);
+            } else if (typeof existing.sizeStock[size] === 'number') {
+              mergedSizeStock[size] = existing.sizeStock[size];
+            } else {
+              mergedSizeStock[size] = 8;
+            }
+          });
+          updatedSku = patch.sku || existing.sku;
+          return {
+            ...existing,
+            ...patch,
+            id: existing.id,
+            brand: patch.brand ? patch.brand.trim().toUpperCase() : existing.brand,
+            title: patch.title ? patch.title.trim() : existing.title,
+            sizes: updatedSizes,
+            sizeStock: mergedSizeStock,
+            stock: sumSizeStock(mergedSizeStock),
+            updatedAt: new Date().toISOString(),
+          };
+        })
+      );
+      showToast(`Updated ${updatedSku || 'product'}`);
+      return true;
+    };
+
     try {
       const res = await fetch(`/api/products/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        return updateLocally();
+      }
       if (!res.ok) {
         const err = (await res.json()) as { error?: string };
         showToast(err.error || 'Could not update product');
@@ -402,8 +518,7 @@ export default function App() {
       showToast(`Updated ${data.product.sku}`);
       return true;
     } catch {
-      showToast('Backend unreachable while updating product');
-      return false;
+      return updateLocally();
     } finally {
       setIsAdminBusy(false);
     }
@@ -414,12 +529,49 @@ export default function App() {
     payload: { deltaPerSize?: number; sizeStock?: Record<string, number> }
   ): Promise<boolean> => {
     setIsAdminBusy(true);
+    const restockLocally = () => {
+      let msg = 'Stock updated';
+      setProducts((prev) =>
+        prev.map((existing) => {
+          if (existing.id !== id) return existing;
+          const nextSizeStock: Record<string, number> = { ...existing.sizeStock };
+          if (payload.sizeStock) {
+            existing.sizes.forEach((s) => {
+              if (typeof payload.sizeStock?.[s] === 'number') {
+                nextSizeStock[s] = Math.max(0, payload.sizeStock[s]);
+              }
+            });
+          } else if (typeof payload.deltaPerSize === 'number') {
+            existing.sizes.forEach((s) => {
+              nextSizeStock[s] = Math.max(
+                0,
+                (nextSizeStock[s] || 0) + (payload.deltaPerSize || 0)
+              );
+            });
+          }
+          const total = sumSizeStock(nextSizeStock);
+          msg = `Stock updated for ${existing.sku}: ${total} units`;
+          return {
+            ...existing,
+            sizeStock: nextSizeStock,
+            stock: total,
+            updatedAt: new Date().toISOString(),
+          };
+        })
+      );
+      showToast(msg);
+      return true;
+    };
+
     try {
       const res = await fetch(`/api/products/${id}/restock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        return restockLocally();
+      }
       if (!res.ok) {
         showToast('Failed to update stock');
         return false;
@@ -429,8 +581,7 @@ export default function App() {
       showToast(`Stock updated for ${data.product.sku}: ${data.product.stock} units`);
       return true;
     } catch {
-      showToast('Backend unreachable while restocking');
-      return false;
+      return restockLocally();
     } finally {
       setIsAdminBusy(false);
     }
@@ -438,12 +589,42 @@ export default function App() {
 
   const handleRefreshInventory = async (minPerSize = 10) => {
     setIsAdminBusy(true);
+    const refreshLocally = () => {
+      let refreshedCount = 0;
+      const nextProducts = products.map((p) => {
+        if (p.stock <= p.reorderLevel || Object.values(p.sizeStock).some((v) => v < minPerSize)) {
+          const nextSizeStock: Record<string, number> = {};
+          p.sizes.forEach((s) => {
+            nextSizeStock[s] = Math.max(p.sizeStock[s] || 0, minPerSize);
+          });
+          refreshedCount += 1;
+          return {
+            ...p,
+            sizeStock: nextSizeStock,
+            stock: sumSizeStock(nextSizeStock),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return p;
+      });
+      setProducts(nextProducts);
+      showToast(
+        refreshedCount > 0
+          ? `Replenished ${refreshedCount} low-stock SKU(s) to ${minPerSize}+ per size`
+          : 'All SKUs already meet minimum stock levels'
+      );
+    };
+
     try {
       const res = await fetch('/api/products/refresh-inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ minPerSize }),
       });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        refreshLocally();
+        return;
+      }
       if (!res.ok) {
         showToast('Failed to refresh low stock');
         return;
@@ -456,7 +637,7 @@ export default function App() {
           : 'All SKUs already meet minimum stock levels'
       );
     } catch {
-      showToast('Backend unreachable while refreshing stock');
+      refreshLocally();
     } finally {
       setIsAdminBusy(false);
     }
@@ -464,8 +645,17 @@ export default function App() {
 
   const handleDeleteProduct = async (id: number) => {
     setIsAdminBusy(true);
+    const deleteLocally = () => {
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      showToast('Removed product from catalog');
+    };
+
     try {
       const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        deleteLocally();
+        return;
+      }
       if (!res.ok) {
         showToast('Failed to delete product');
         return;
@@ -473,7 +663,7 @@ export default function App() {
       setProducts((prev) => prev.filter((p) => p.id !== id));
       showToast('Removed product from catalog');
     } catch {
-      showToast('Backend unreachable while deleting product');
+      deleteLocally();
     } finally {
       setIsAdminBusy(false);
     }
@@ -484,12 +674,47 @@ export default function App() {
     status: OrderTrackingRecord['status']
   ) => {
     setIsAdminBusy(true);
+    const updateOrderLocally = () => {
+      const progressMap: Record<OrderTrackingRecord['status'], number> = {
+        'Order Placed': 20,
+        'Packed at Jhonty Hub': 42,
+        'In Transit': 68,
+        'Out for Delivery': 88,
+        Delivered: 100,
+        'Ready for Store Pickup': 75,
+      };
+      setTrackingOrders((prev) =>
+        prev.map((existing) => {
+          if (existing.orderId !== orderId) return existing;
+          const nextProgress = progressMap[status] ?? existing.progressPct;
+          const updatedWaypoints = existing.waypoints.map((wp, i) => ({
+            ...wp,
+            completed: nextProgress >= Math.round(((i + 1) / existing.waypoints.length) * 100) || i === 0,
+            current: false,
+          }));
+          const lastIdx = updatedWaypoints.reduce((acc, wp, i) => (wp.completed ? i : acc), 0);
+          if (updatedWaypoints[lastIdx]) updatedWaypoints[lastIdx].current = true;
+          return {
+            ...existing,
+            status,
+            progressPct: nextProgress,
+            waypoints: updatedWaypoints,
+          };
+        })
+      );
+      showToast(`Order ${orderId} set to "${status}"`);
+    };
+
     try {
       const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
+      if (res.status === 404 || !isJsonResponse(res)) {
+        updateOrderLocally();
+        return;
+      }
       if (!res.ok) {
         showToast('Could not update order status');
         return;
@@ -498,7 +723,7 @@ export default function App() {
       setTrackingOrders((prev) => prev.map((o) => (o.orderId === orderId ? data.order : o)));
       showToast(`Order ${orderId} set to "${status}"`);
     } catch {
-      showToast('Backend unreachable while updating order');
+      updateOrderLocally();
     } finally {
       setIsAdminBusy(false);
     }
