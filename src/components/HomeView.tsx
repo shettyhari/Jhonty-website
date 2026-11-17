@@ -184,23 +184,23 @@ export function HomeView({
       </section>
 
       {/* 2. Menswear Departments & Featured Brands */}
-      <section className="py-12 border-b border-neutral-200 bg-white">
+      <section className="py-12 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#080808] transition-colors">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-7">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-neutral-950">
+              <h2 className="text-2xl font-bold tracking-tight text-neutral-950 dark:text-neutral-50">
                 Shop by Menswear Department
               </h2>
-              <p className="text-sm text-neutral-600 mt-1">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                 Branded casualwear, tailored shirts, denim, and sneakers curated in Madhapur
               </p>
             </div>
             <button
               type="button"
               onClick={onOpenStores}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#d98200] transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-900 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619] transition-colors"
             >
-              <MapPin className="w-4 h-4 text-[#d98200]" />
+              <MapPin className="w-4 h-4 text-[#d98200] dark:text-[#faa619]" />
               <span>Visit Hitech City Metro &amp; Madhapur Stores</span>
             </button>
           </div>
@@ -216,7 +216,7 @@ export function HomeView({
                 }}
                 className="group text-left"
               >
-                <div className="aspect-[3/4] rounded-md overflow-hidden bg-neutral-100 border border-neutral-200 group-hover:border-[#faa619] transition-colors mb-2">
+                <div className="aspect-[3/4] rounded-md overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 group-hover:border-[#faa619] transition-colors mb-2">
                   <ResilientImage
                     src={item.image}
                     alt={item.label}
@@ -224,23 +224,23 @@ export function HomeView({
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
-                <span className="block text-[13px] font-semibold text-neutral-900 group-hover:text-[#d98200] transition-colors">
+                <span className="block text-[13px] font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-[#d98200] dark:group-hover:text-[#faa619] transition-colors">
                   {item.label}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className="pt-8 border-t border-neutral-200">
+          <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-700">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
                 Featured Labels at Jhonty Hub
               </h3>
               {activeBrand && (
                 <button
                   type="button"
                   onClick={onResetFilters}
-                  className="text-xs font-semibold text-[#d98200] hover:underline"
+                  className="text-xs font-semibold text-[#d98200] dark:text-[#faa619] hover:underline"
                 >
                   Show all labels
                 </button>
@@ -259,14 +259,16 @@ export function HomeView({
                     }}
                     className={`p-3.5 rounded-md border text-center transition-colors ${
                       selected
-                        ? 'bg-neutral-950 text-white border-neutral-950'
-                        : 'bg-neutral-50 hover:bg-white border-neutral-200 hover:border-[#faa619]'
+                        ? 'bg-neutral-950 text-white border-neutral-950 dark:bg-[#faa619] dark:text-neutral-950 dark:border-[#faa619]'
+                        : 'bg-neutral-50 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-800 hover:border-[#faa619] text-neutral-950 dark:text-neutral-100'
                     }`}
                   >
                     <div className="text-xs font-bold tracking-wider truncate">{b.name}</div>
                     <div
                       className={`text-[11px] font-semibold mt-1 ${
-                        selected ? 'text-[#faa619]' : 'text-[#d98200]'
+                        selected
+                          ? 'text-[#faa619] dark:text-neutral-950'
+                          : 'text-[#d98200] dark:text-[#faa619]'
                       }`}
                     >
                       {b.offer}
@@ -280,20 +282,20 @@ export function HomeView({
       </section>
 
       {/* 3. Jhonty Hub Value Rack & Catalog */}
-      <section id="catalog-section" className="py-12 bg-neutral-50">
+      <section id="catalog-section" className="py-12 bg-neutral-50 dark:bg-neutral-950 transition-colors">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-neutral-950">
+              <h2 className="text-2xl font-bold tracking-tight text-neutral-950 dark:text-neutral-50">
                 Jhonty Hub Value Collection
               </h2>
-              <p className="text-sm text-neutral-600 mt-1">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                 Up to 50% off showroom MRPs · Select any piece for sizing, pincode check, or pickup
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex flex-wrap items-center gap-1 p-1 bg-white border border-neutral-200 rounded-lg">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
                 {CATEGORY_TABS.map((cat) => (
                   <button
                     key={cat}
@@ -301,8 +303,8 @@ export function HomeView({
                     onClick={() => onSelectCategory(cat)}
                     className={`px-3.5 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${
                       activeCategory === cat
-                        ? 'bg-neutral-950 text-white'
-                        : 'text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100'
+                        ? 'bg-neutral-950 text-white dark:bg-[#faa619] dark:text-neutral-950'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800'
                     }`}
                   >
                     {cat}
@@ -314,7 +316,9 @@ export function HomeView({
 
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-semibold text-neutral-600 mr-1">Price Point:</span>
+              <span className="font-semibold text-neutral-600 dark:text-neutral-400 mr-1">
+                Price Point:
+              </span>
               {PRICE_CAPS.map((cap) => {
                 const isSelected = activeMaxPrice === cap;
                 return (
@@ -325,7 +329,7 @@ export function HomeView({
                     className={`px-3 py-1.5 rounded-md border font-semibold tabular-nums transition-colors ${
                       isSelected
                         ? 'bg-[#faa619] border-[#faa619] text-neutral-950'
-                        : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-400'
+                        : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-600'
                     }`}
                   >
                     Under {formatINR(cap)}
@@ -341,23 +345,28 @@ export function HomeView({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search shirts, denim, brands..."
                 aria-label="Search catalog mobile"
-                className="w-full h-10 pl-3.5 pr-9 text-sm bg-white border border-neutral-200 rounded-md focus:border-[#faa619] focus:outline-none"
+                className="w-full h-10 pl-3.5 pr-9 text-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 rounded-md focus:border-[#faa619] focus:outline-none"
               />
               <Search className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2" />
             </div>
           </div>
 
           {hasActiveFilter && (
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-neutral-200 rounded-md px-4 py-3 mb-6 text-sm">
-              <div className="text-neutral-700">
-                Showing <strong className="tabular-nums text-neutral-950">{products.length}</strong>{' '}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md px-4 py-3 mb-6 text-sm">
+              <div className="text-neutral-700 dark:text-neutral-300">
+                Showing{' '}
+                <strong className="tabular-nums text-neutral-950 dark:text-white">
+                  {products.length}
+                </strong>{' '}
                 style(s) <span aria-hidden="true">·</span>{' '}
-                <span className="font-medium text-neutral-900">{activeFilterSummary}</span>
+                <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                  {activeFilterSummary}
+                </span>
               </div>
               <button
                 type="button"
                 onClick={onResetFilters}
-                className="text-xs font-bold uppercase tracking-wider text-[#d98200] hover:text-neutral-950"
+                className="text-xs font-bold uppercase tracking-wider text-[#d98200] dark:text-[#faa619] hover:text-neutral-950 dark:hover:text-white"
               >
                 Clear All Filters
               </button>
@@ -365,11 +374,11 @@ export function HomeView({
           )}
 
           {products.length === 0 ? (
-            <div className="bg-white border border-neutral-200 rounded-lg p-12 text-center">
-              <h3 className="text-lg font-bold text-neutral-950 mb-2">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-12 text-center">
+              <h3 className="text-lg font-bold text-neutral-950 dark:text-neutral-50 mb-2">
                 No styles match your current selection
               </h3>
-              <p className="text-sm text-neutral-600 mb-5">
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-5">
                 Try clearing active filters or exploring another menswear department.
               </p>
               <button
@@ -399,13 +408,13 @@ export function HomeView({
       </section>
 
       {/* 4. Style Edits */}
-      <section className="py-12 bg-white border-t border-neutral-200">
+      <section className="py-12 bg-white dark:bg-[#080808] border-t border-neutral-200 dark:border-neutral-800 transition-colors">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6">
           <div className="mb-7">
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-950">
+            <h2 className="text-2xl font-bold tracking-tight text-neutral-950 dark:text-neutral-50">
               Shop by Wardrobe Edit
             </h2>
-            <p className="text-sm text-neutral-600 mt-1">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
               Everyday comfort, workdays in Hitech City, and weekend street looks
             </p>
           </div>
@@ -423,15 +432,17 @@ export function HomeView({
                   }}
                   className={`p-6 rounded-lg border text-left transition-all flex flex-col justify-between min-h-[128px] ${
                     isSelected
-                      ? 'bg-neutral-950 text-white border-neutral-950'
-                      : 'bg-neutral-50 hover:bg-white border-neutral-200 hover:border-[#faa619]'
+                      ? 'bg-neutral-950 text-white border-neutral-950 dark:bg-[#faa619] dark:text-neutral-950 dark:border-[#faa619]'
+                      : 'bg-neutral-50 dark:bg-neutral-900 hover:bg-white dark:hover:bg-neutral-800 border-neutral-200 dark:border-neutral-800 hover:border-[#faa619] text-neutral-950 dark:text-neutral-100'
                   }`}
                 >
                   <div>
                     <h3 className="text-lg font-bold">{item.title}</h3>
                     <p
                       className={`text-xs mt-1 ${
-                        isSelected ? 'text-neutral-300' : 'text-neutral-600'
+                        isSelected
+                          ? 'text-neutral-300 dark:text-neutral-900'
+                          : 'text-neutral-600 dark:text-neutral-400'
                       }`}
                     >
                       {item.subtitle}
@@ -439,7 +450,9 @@ export function HomeView({
                   </div>
                   <span
                     className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mt-4 ${
-                      isSelected ? 'text-[#faa619]' : 'text-neutral-900'
+                      isSelected
+                        ? 'text-[#faa619] dark:text-neutral-950'
+                        : 'text-neutral-900 dark:text-neutral-100'
                     }`}
                   >
                     <span>Explore Edit</span>

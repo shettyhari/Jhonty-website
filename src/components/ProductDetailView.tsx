@@ -81,14 +81,14 @@ export function ProductDetailView({
   };
 
   return (
-    <main className="bg-white pb-24 lg:pb-16">
+    <main className="bg-white dark:bg-[#080808] pb-24 lg:pb-16 transition-colors">
       {/* Breadcrumb Bar */}
-      <div className="bg-neutral-50 border-b border-neutral-200 py-3.5 text-xs sm:text-sm text-neutral-600">
+      <div className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 py-3.5 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
           <button
             type="button"
             onClick={onNavigateHome}
-            className="font-semibold text-neutral-900 hover:text-[#d98200]"
+            className="font-semibold text-neutral-900 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619]"
           >
             Home
           </button>
@@ -96,12 +96,12 @@ export function ProductDetailView({
           <button
             type="button"
             onClick={() => onSelectCategory(product.category)}
-            className="font-semibold text-neutral-900 hover:text-[#d98200]"
+            className="font-semibold text-neutral-900 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619]"
           >
             {product.category}
           </button>
           <span aria-hidden="true">/</span>
-          <span className="text-neutral-500 truncate">
+          <span className="text-neutral-500 dark:text-neutral-400 truncate">
             {product.brand} — {product.title}
           </span>
         </div>
@@ -123,7 +123,7 @@ export function ProductDetailView({
                     className={`w-16 sm:w-full aspect-[3/4] rounded-md overflow-hidden border-2 shrink-0 transition-opacity ${
                       galleryIdx === i
                         ? 'border-[#faa619] opacity-100'
-                        : 'border-neutral-200 opacity-70 hover:opacity-100'
+                        : 'border-neutral-200 dark:border-neutral-800 opacity-70 hover:opacity-100'
                     }`}
                   >
                     <ResilientImage
@@ -137,7 +137,7 @@ export function ProductDetailView({
             )}
 
             <div
-              className={`order-1 sm:order-2 aspect-[3/4] rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 ${
+              className={`order-1 sm:order-2 aspect-[3/4] rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 ${
                 product.gallery.length === 1 ? 'sm:col-span-2' : ''
               }`}
             >
@@ -153,42 +153,47 @@ export function ProductDetailView({
           <div className="lg:col-span-5 space-y-6">
             <div>
               <div className="flex items-center justify-between gap-4 text-xs mb-2">
-                <span className="font-bold uppercase tracking-widest text-[#d98200]">
+                <span className="font-bold uppercase tracking-widest text-[#d98200] dark:text-[#faa619]">
                   {product.brand}
                 </span>
-                <div className="inline-flex items-center gap-1.5 text-neutral-700 font-semibold tabular-nums">
+                <div className="inline-flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300 font-semibold tabular-nums">
                   <Star className="w-3.5 h-3.5 fill-[#faa619] text-[#faa619]" />
                   <span>{product.rating}</span>
                   <span aria-hidden="true">·</span>
-                  <span className="text-neutral-500">{product.reviews} Reviews</span>
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    {product.reviews} Reviews
+                  </span>
                 </div>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 leading-snug">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 dark:text-neutral-50 leading-snug">
                 {product.title}
               </h1>
             </div>
 
             {/* Price Summary */}
-            <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+            <div className="p-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
               <div className="flex items-baseline gap-3 tabular-nums">
-                <span className="text-2xl font-bold text-neutral-950">
+                <span className="text-2xl font-bold text-neutral-950 dark:text-white">
                   {formatINR(product.price)}
                 </span>
-                <span className="text-sm text-neutral-400 line-through">
+                <span className="text-sm text-neutral-400 dark:text-neutral-500 line-through">
                   MRP {formatINR(product.mrp)}
                 </span>
-                <span className="text-sm font-bold text-[#d98200]">{discountPct}% OFF</span>
+                <span className="text-sm font-bold text-[#d98200] dark:text-[#faa619]">
+                  {discountPct}% OFF
+                </span>
               </div>
-              <p className="text-xs font-medium text-emerald-700 mt-1.5">
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mt-1.5">
                 Inclusive of all taxes · Earn {rewardPoints} Jhonty Club Points
               </p>
             </div>
 
             {/* Color Swatches */}
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-neutral-700 mb-2.5">
-                Color: <span className="text-neutral-950">{selectedColor.name}</span>
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 mb-2.5">
+                Color:{' '}
+                <span className="text-neutral-950 dark:text-white">{selectedColor.name}</span>
               </div>
               <div className="flex items-center gap-3">
                 {product.colors.map((c, idx) => (
@@ -199,10 +204,10 @@ export function ProductDetailView({
                     aria-label={`Select color ${c.name}`}
                     title={c.name}
                     style={{ backgroundColor: c.hex }}
-                    className={`w-8 h-8 rounded-full border-2 border-white transition-all ${
+                    className={`w-8 h-8 rounded-full border-2 border-white dark:border-neutral-900 transition-all ${
                       selectedColorIdx === idx
-                        ? 'ring-2 ring-neutral-950 scale-105'
-                        : 'ring-1 ring-neutral-300 hover:ring-neutral-500'
+                        ? 'ring-2 ring-neutral-950 dark:ring-[#faa619] scale-105'
+                        : 'ring-1 ring-neutral-300 dark:ring-neutral-700 hover:ring-neutral-500'
                     }`}
                   />
                 ))}
@@ -212,15 +217,15 @@ export function ProductDetailView({
             {/* Size Selector */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
-                  Size: <span className="text-neutral-950">{selectedSize}</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
+                  Size: <span className="text-neutral-950 dark:text-white">{selectedSize}</span>
                   <span
                     className={`ml-2 normal-case font-semibold tabular-nums ${
                       selectedSizeQty <= 0
-                        ? 'text-red-600'
+                        ? 'text-red-600 dark:text-red-400'
                         : selectedSizeQty <= 3
-                        ? 'text-amber-700'
-                        : 'text-emerald-700'
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-emerald-700 dark:text-emerald-400'
                     }`}
                   >
                     {selectedSizeQty <= 0
@@ -231,7 +236,7 @@ export function ProductDetailView({
                 <button
                   type="button"
                   onClick={onOpenSizeGuide}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#d98200] hover:text-neutral-950 underline"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#d98200] dark:text-[#faa619] hover:text-neutral-950 dark:hover:text-white underline"
                 >
                   <Ruler className="w-3.5 h-3.5" />
                   <span>Size Guide</span>
@@ -248,10 +253,10 @@ export function ProductDetailView({
                       onClick={() => setSelectedSize(size)}
                       className={`min-w-[52px] h-10 px-3.5 text-sm font-semibold rounded-md border transition-colors ${
                         selectedSize === size
-                          ? 'bg-neutral-950 text-white border-neutral-950'
+                          ? 'bg-neutral-950 text-white border-neutral-950 dark:bg-[#faa619] dark:text-neutral-950 dark:border-[#faa619]'
                           : soldOut
-                          ? 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
-                          : 'bg-white text-neutral-900 border-neutral-300 hover:border-neutral-950'
+                          ? 'bg-neutral-100 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-600 border-neutral-200 dark:border-neutral-800 line-through'
+                          : 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-400'
                       }`}
                     >
                       {size}
@@ -267,7 +272,7 @@ export function ProductDetailView({
                 type="button"
                 disabled={selectedSizeQty <= 0}
                 onClick={() => onAddToBag(product, selectedSize, selectedColor.name)}
-                className="h-12 px-6 bg-[#faa619] hover:bg-[#e6950c] disabled:bg-neutral-200 disabled:text-neutral-500 text-neutral-950 text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
+                className="h-12 px-6 bg-[#faa619] hover:bg-[#e6950c] disabled:bg-neutral-200 dark:disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
               >
                 {selectedSizeQty <= 0 ? 'Size Out of Stock' : 'Add To Basket'}
               </button>
@@ -275,7 +280,7 @@ export function ProductDetailView({
                 type="button"
                 disabled={selectedSizeQty <= 0}
                 onClick={() => onBuyNow(product, selectedSize, selectedColor.name)}
-                className="h-12 px-6 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
+                className="h-12 px-6 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 disabled:bg-neutral-300 dark:disabled:bg-neutral-800 text-white dark:text-neutral-950 text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
               >
                 Buy Now
               </button>
@@ -284,19 +289,23 @@ export function ProductDetailView({
             <button
               type="button"
               onClick={() => onToggleWishlist(product.id)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-800 hover:text-neutral-950 py-1"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white py-1"
             >
               <Heart
-                className={`w-4 h-4 ${isWishlisted ? 'text-red-600' : 'text-neutral-600'}`}
+                className={`w-4 h-4 ${
+                  isWishlisted
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-neutral-600 dark:text-neutral-400'
+                }`}
                 fill={isWishlisted ? 'currentColor' : 'none'}
               />
               <span>{isWishlisted ? 'Saved in Wishlist' : 'Save to Wishlist'}</span>
             </button>
 
             {/* Indian Pincode Checker */}
-            <div className="p-4 border border-neutral-200 rounded-lg bg-white">
-              <div className="flex items-center gap-2 text-sm font-bold text-neutral-950 mb-2">
-                <Truck className="w-4 h-4 text-[#d98200]" />
+            <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900">
+              <div className="flex items-center gap-2 text-sm font-bold text-neutral-950 dark:text-neutral-50 mb-2">
+                <Truck className="w-4 h-4 text-[#d98200] dark:text-[#faa619]" />
                 <span>Check Delivery &amp; Click &amp; Collect</span>
               </div>
               <form onSubmit={handlePincodeCheck} className="flex gap-2">
@@ -308,11 +317,11 @@ export function ProductDetailView({
                   onChange={(e) => setPincode(e.target.value)}
                   placeholder="Enter 6-digit pincode (e.g. 500081)"
                   aria-label="Delivery pincode"
-                  className="flex-1 h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none tabular-nums"
+                  className="flex-1 h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 rounded-md text-sm focus:border-[#faa619] focus:outline-none tabular-nums"
                 />
                 <button
                   type="submit"
-                  className="px-4 h-10 border border-neutral-950 text-neutral-950 hover:bg-neutral-950 hover:text-white text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+                  className="px-4 h-10 border border-neutral-950 dark:border-neutral-600 text-neutral-950 dark:text-neutral-100 hover:bg-neutral-950 hover:text-white dark:hover:bg-[#faa619] dark:hover:text-neutral-950 dark:hover:border-[#faa619] text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
                 >
                   Check
                 </button>
@@ -320,7 +329,9 @@ export function ProductDetailView({
               {pincodeMessage && (
                 <p
                   className={`mt-2.5 text-xs font-semibold flex items-start gap-1.5 ${
-                    pincodeMessage.ok ? 'text-emerald-700' : 'text-red-600'
+                    pincodeMessage.ok
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-red-600 dark:text-red-400'
                   }`}
                 >
                   {pincodeMessage.ok && <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />}
@@ -330,44 +341,66 @@ export function ProductDetailView({
             </div>
 
             {/* Product Details & Specifications */}
-            <div className="pt-4 border-t border-neutral-200 space-y-4">
+            <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
               <div>
-                <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-950 mb-1.5">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-950 dark:text-neutral-50 mb-1.5">
                   Product Overview
                 </h2>
-                <p className="text-sm text-neutral-600 leading-relaxed">{product.description}</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  {product.description}
+                </p>
               </div>
 
               <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm pt-2">
                 <div>
-                  <dt className="text-xs text-neutral-500">Fabric / Material</dt>
-                  <dd className="font-semibold text-neutral-900">{product.fabric}</dd>
+                  <dt className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Fabric / Material
+                  </dt>
+                  <dd className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {product.fabric}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-neutral-500">Fit / Specification</dt>
-                  <dd className="font-semibold text-neutral-900">{product.fit}</dd>
+                  <dt className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Fit / Specification
+                  </dt>
+                  <dd className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {product.fit}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-neutral-500">Wash &amp; Care</dt>
-                  <dd className="font-semibold text-neutral-900">{product.care}</dd>
+                  <dt className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Wash &amp; Care
+                  </dt>
+                  <dd className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {product.care}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-neutral-500">Country of Origin</dt>
-                  <dd className="font-semibold text-neutral-900">{product.origin}</dd>
+                  <dt className="text-xs text-neutral-500 dark:text-neutral-400">
+                    Country of Origin
+                  </dt>
+                  <dd className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {product.origin}
+                  </dd>
                 </div>
               </dl>
 
-              <div className="flex items-center gap-2 text-xs text-neutral-500 pt-2">
-                <ShieldCheck className="w-4 h-4 text-neutral-700 shrink-0" />
-                <span>100% Authentic Jhonty Hub Merchandise · Easy Exchange at Madhapur Stores</span>
+              <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 pt-2">
+                <ShieldCheck className="w-4 h-4 text-neutral-700 dark:text-neutral-300 shrink-0" />
+                <span>
+                  100% Authentic Jhonty Hub Merchandise · Easy Exchange at Madhapur Stores
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Related Styles */}
-        <section className="mt-16 pt-10 border-t border-neutral-200">
-          <h2 className="text-xl font-bold text-neutral-950 mb-6">Similar Styles You May Like</h2>
+        <section className="mt-16 pt-10 border-t border-neutral-200 dark:border-neutral-800">
+          <h2 className="text-xl font-bold text-neutral-950 dark:text-neutral-50 mb-6">
+            Similar Styles You May Like
+          </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {relatedProducts.map((rel) => (
               <ProductCard
@@ -385,17 +418,21 @@ export function ProductDetailView({
       </div>
 
       {/* Mobile Sticky Bottom Buy Bar */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-neutral-200 px-4 py-3 flex items-center justify-between gap-3">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800 px-4 py-3 flex items-center justify-between gap-3">
         <div className="tabular-nums">
-          <div className="text-base font-bold text-neutral-950">{formatINR(product.price)}</div>
-          <div className="text-[11px] text-neutral-500">Size: {selectedSize}</div>
+          <div className="text-base font-bold text-neutral-950 dark:text-white">
+            {formatINR(product.price)}
+          </div>
+          <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            Size: {selectedSize}
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-1 max-w-[260px]">
           <button
             type="button"
             disabled={selectedSizeQty <= 0}
             onClick={() => onAddToBag(product, selectedSize, selectedColor.name)}
-            className="flex-1 h-11 bg-[#faa619] disabled:bg-neutral-200 disabled:text-neutral-500 text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
+            className="flex-1 h-11 bg-[#faa619] disabled:bg-neutral-200 dark:disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
           >
             {selectedSizeQty <= 0 ? 'Sold Out' : 'Add Basket'}
           </button>
@@ -403,7 +440,7 @@ export function ProductDetailView({
             type="button"
             disabled={selectedSizeQty <= 0}
             onClick={() => onBuyNow(product, selectedSize, selectedColor.name)}
-            className="flex-1 h-11 bg-neutral-950 disabled:bg-neutral-300 text-white text-xs font-bold uppercase tracking-wider rounded-md"
+            className="flex-1 h-11 bg-neutral-950 dark:bg-white disabled:bg-neutral-300 dark:disabled:bg-neutral-800 text-white dark:text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
           >
             Buy Now
           </button>

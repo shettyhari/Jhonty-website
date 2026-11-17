@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Trash2, X } from 'lucide-react';
+import { Moon, Sun, Trash2, X } from 'lucide-react';
 import { formatINR } from '../data/catalog';
 import { BagItem, Category, Product, ViewMode } from '../types';
 import { BrandLogo } from './BrandLogo';
 import { ResilientImage } from './ResilientImage';
 
 interface OverlaysProps {
+  theme: 'light' | 'dark';
   bagOpen: boolean;
   wishlistOpen: boolean;
   mobileMenuOpen: boolean;
@@ -16,6 +17,7 @@ interface OverlaysProps {
   bag: BagItem[];
   wishlistIds: number[];
   coupon: string | null;
+  onToggleTheme: () => void;
   onCloseAll: () => void;
   onUpdateQty: (idx: number, delta: number) => void;
   onRemoveBagItem: (idx: number) => void;
@@ -30,6 +32,7 @@ interface OverlaysProps {
 }
 
 export function Overlays({
+  theme,
   bagOpen,
   wishlistOpen,
   mobileMenuOpen,
@@ -40,6 +43,7 @@ export function Overlays({
   bag,
   wishlistIds,
   coupon,
+  onToggleTheme,
   onCloseAll,
   onUpdateQty,
   onRemoveBagItem,
@@ -99,86 +103,100 @@ export function Overlays({
       {/* Backdrop */}
       <div
         onClick={onCloseAll}
-        className="fixed inset-0 bg-black/50 backdrop-blur-[1px]"
+        className="fixed inset-0 bg-black/55 backdrop-blur-[1px]"
         aria-hidden="true"
       />
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <aside className="fixed inset-y-0 left-0 w-72 bg-white z-10 p-5 flex flex-col shadow-xl">
-          <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
-            <BrandLogo compact />
-            <button
-              type="button"
-              onClick={onCloseAll}
-              aria-label="Close menu"
-              className="p-2 text-neutral-600 hover:text-neutral-950"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <nav className="flex flex-col divide-y divide-neutral-100 mt-2">
-            {(
-              ['Shirts & Polos', 'Denim & Chinos', 'Outerwear', 'Footwear', 'Accessories'] as Category[]
-            ).map((cat) => (
+        <aside className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0b0b0b] z-10 p-5 flex flex-col justify-between shadow-xl border-r border-neutral-200 dark:border-neutral-800">
+          <div>
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-neutral-800">
+              <BrandLogo compact variant={theme} />
               <button
-                key={cat}
+                type="button"
+                onClick={onCloseAll}
+                aria-label="Close menu"
+                className="p-2 text-neutral-600 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <nav className="flex flex-col divide-y divide-neutral-100 dark:divide-neutral-800 mt-2">
+              {(
+                ['Shirts & Polos', 'Denim & Chinos', 'Outerwear', 'Footwear', 'Accessories'] as Category[]
+              ).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    onSelectCategory(cat);
+                    onCloseAll();
+                  }}
+                  className="text-left py-3.5 text-base font-semibold text-neutral-900 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619]"
+                >
+                  {cat}
+                </button>
+              ))}
+              <button
                 type="button"
                 onClick={() => {
-                  onSelectCategory(cat);
+                  onNavigate('stores');
                   onCloseAll();
                 }}
-                className="text-left py-3.5 text-base font-semibold text-neutral-900 hover:text-[#d98200]"
+                className="text-left py-3.5 text-base font-semibold text-neutral-900 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619]"
               >
-                {cat}
+                Store Locator
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('stores');
-                onCloseAll();
-              }}
-              className="text-left py-3.5 text-base font-semibold text-neutral-900 hover:text-[#d98200]"
-            >
-              Store Locator
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('tracking');
-                onCloseAll();
-              }}
-              className="text-left py-3.5 text-base font-semibold text-neutral-900 hover:text-[#d98200]"
-            >
-              Track Order
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('admin');
-                onCloseAll();
-              }}
-              className="text-left py-3.5 text-base font-semibold text-[#d98200] hover:text-neutral-950"
-            >
-              Admin Console
-            </button>
-          </nav>
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate('tracking');
+                  onCloseAll();
+                }}
+                className="text-left py-3.5 text-base font-semibold text-neutral-900 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619]"
+              >
+                Track Order
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate('admin');
+                  onCloseAll();
+                }}
+                className="text-left py-3.5 text-base font-semibold text-[#d98200] dark:text-[#faa619] hover:text-neutral-950 dark:hover:text-white"
+              >
+                Admin Console
+              </button>
+            </nav>
+          </div>
+
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className="w-full h-11 px-4 border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 rounded-md flex items-center justify-between text-sm font-semibold text-neutral-900 dark:text-neutral-100"
+          >
+            <span>Appearance</span>
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-[#d98200] dark:text-[#faa619]">
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </span>
+          </button>
         </aside>
       )}
 
       {/* Shopping Basket Drawer */}
       {bagOpen && (
-        <aside className="fixed inset-y-0 right-0 w-full max-w-md bg-white z-10 flex flex-col shadow-2xl">
-          <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
-            <h3 className="text-base font-bold text-neutral-950 tabular-nums">
+        <aside className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-[#0b0b0b] z-10 flex flex-col shadow-2xl border-l border-neutral-200 dark:border-neutral-800">
+          <div className="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+            <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-50 tabular-nums">
               Shopping Basket ({bag.reduce((s, i) => s + i.qty, 0)})
             </h3>
             <button
               type="button"
               onClick={onCloseAll}
               aria-label="Close shopping basket"
-              className="p-1.5 text-neutral-500 hover:text-neutral-950"
+              className="p-1.5 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -187,11 +205,11 @@ export function Overlays({
           <div className="flex-1 overflow-y-auto p-5">
             {bag.length === 0 ? (
               <div className="text-center py-16">
-                <p className="text-base font-bold text-neutral-950 mb-1">
+                <p className="text-base font-bold text-neutral-950 dark:text-neutral-50 mb-1">
                   Your Shopping Basket is Empty
                 </p>
-                <p className="text-sm text-neutral-500 mb-6">
-                  Explore trending fashion, footwear, and beauty styles.
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+                  Explore trending fashion, footwear, and menswear essentials.
                 </p>
                 <button
                   type="button"
@@ -206,9 +224,9 @@ export function Overlays({
                 {bag.map((item, idx) => (
                   <div
                     key={`${item.id}-${item.size}-${idx}`}
-                    className="flex gap-3.5 pb-4 border-b border-neutral-200"
+                    className="flex gap-3.5 pb-4 border-b border-neutral-200 dark:border-neutral-800"
                   >
-                    <div className="w-20 h-24 rounded-md overflow-hidden bg-neutral-100 shrink-0">
+                    <div className="w-20 h-24 rounded-md overflow-hidden bg-neutral-100 dark:bg-neutral-900 shrink-0">
                       <ResilientImage
                         src={item.image}
                         alt={item.title}
@@ -216,23 +234,23 @@ export function Overlays({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-bold uppercase text-neutral-500">
+                      <div className="text-[11px] font-bold uppercase text-neutral-500 dark:text-neutral-400">
                         {item.brand} · Size {item.size}
                       </div>
-                      <h4 className="text-sm font-semibold text-neutral-950 line-clamp-2 mt-0.5">
+                      <h4 className="text-sm font-semibold text-neutral-950 dark:text-neutral-100 line-clamp-2 mt-0.5">
                         {item.title}
                       </h4>
-                      <div className="text-sm font-bold text-neutral-950 tabular-nums mt-1">
+                      <div className="text-sm font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
                         {formatINR(item.price * item.qty)}
                       </div>
 
                       <div className="flex items-center justify-between mt-2.5">
-                        <div className="inline-flex items-center border border-neutral-200 rounded-md">
+                        <div className="inline-flex items-center border border-neutral-200 dark:border-neutral-700 rounded-md">
                           <button
                             type="button"
                             onClick={() => onUpdateQty(idx, -1)}
                             aria-label="Decrease quantity"
-                            className="w-7 h-7 text-sm font-bold hover:bg-neutral-100"
+                            className="w-7 h-7 text-sm font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800"
                           >
                             -
                           </button>
@@ -243,7 +261,7 @@ export function Overlays({
                             type="button"
                             onClick={() => onUpdateQty(idx, 1)}
                             aria-label="Increase quantity"
-                            className="w-7 h-7 text-sm font-bold hover:bg-neutral-100"
+                            className="w-7 h-7 text-sm font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800"
                           >
                             +
                           </button>
@@ -252,7 +270,7 @@ export function Overlays({
                         <button
                           type="button"
                           onClick={() => onRemoveBagItem(idx)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-700"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>Remove</span>
@@ -266,34 +284,34 @@ export function Overlays({
           </div>
 
           {bag.length > 0 && (
-            <div className="p-5 bg-neutral-50 border-t border-neutral-200">
+            <div className="p-5 bg-neutral-50 dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800">
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="Promo code (JHONTY15 or JH1000)"
-                  className="flex-1 h-9 px-3 bg-white border border-neutral-200 rounded-md text-xs uppercase focus:border-[#faa619] focus:outline-none"
+                  className="flex-1 h-9 px-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 rounded-md text-xs uppercase focus:border-[#faa619] focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => onApplyCoupon(couponCode)}
-                  className="px-3.5 h-9 border border-neutral-950 text-xs font-bold rounded-md hover:bg-neutral-950 hover:text-white transition-colors"
+                  className="px-3.5 h-9 border border-neutral-950 dark:border-neutral-600 text-xs font-bold rounded-md hover:bg-neutral-950 hover:text-white dark:hover:bg-[#faa619] dark:hover:text-neutral-950 dark:hover:border-[#faa619] transition-colors"
                 >
                   Apply
                 </button>
               </div>
 
               <div className="space-y-1.5 text-sm tabular-nums mb-4">
-                <div className="flex justify-between text-neutral-600">
+                <div className="flex justify-between text-neutral-600 dark:text-neutral-400">
                   <span>Subtotal</span>
                   <span>{formatINR(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-emerald-700">
+                <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
                   <span>Promo Discount</span>
                   <span>-{formatINR(discount)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-base text-neutral-950 pt-2 border-t border-neutral-200">
+                <div className="flex justify-between font-bold text-base text-neutral-950 dark:text-white pt-2 border-t border-neutral-200 dark:border-neutral-800">
                   <span>Total</span>
                   <span>{formatINR(total)}</span>
                 </div>
@@ -313,23 +331,23 @@ export function Overlays({
 
       {/* Wishlist Drawer */}
       {wishlistOpen && (
-        <aside className="fixed inset-y-0 right-0 w-full max-w-md bg-white z-10 flex flex-col shadow-2xl">
-          <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
-            <h3 className="text-base font-bold text-neutral-950">
+        <aside className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-[#0b0b0b] z-10 flex flex-col shadow-2xl border-l border-neutral-200 dark:border-neutral-800">
+          <div className="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+            <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-50">
               Saved Wishlist ({wishlistProducts.length})
             </h3>
             <button
               type="button"
               onClick={onCloseAll}
               aria-label="Close wishlist"
-              className="p-1.5 text-neutral-500 hover:text-neutral-950"
+              className="p-1.5 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-5">
             {wishlistProducts.length === 0 ? (
-              <p className="text-center text-sm text-neutral-500 py-14">
+              <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-14">
                 No styles saved yet. Tap the heart icon on any product to save it here.
               </p>
             ) : (
@@ -337,9 +355,9 @@ export function Overlays({
                 {wishlistProducts.map((p) => (
                   <div
                     key={p.id}
-                    className="flex gap-3.5 pb-4 border-b border-neutral-200"
+                    className="flex gap-3.5 pb-4 border-b border-neutral-200 dark:border-neutral-800"
                   >
-                    <div className="w-20 h-24 rounded-md overflow-hidden bg-neutral-100 shrink-0">
+                    <div className="w-20 h-24 rounded-md overflow-hidden bg-neutral-100 dark:bg-neutral-900 shrink-0">
                       <ResilientImage
                         src={p.gallery[0]}
                         alt={p.title}
@@ -347,7 +365,7 @@ export function Overlays({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-bold uppercase text-neutral-500">
+                      <div className="text-[11px] font-bold uppercase text-neutral-500 dark:text-neutral-400">
                         {p.brand}
                       </div>
                       <button
@@ -356,25 +374,25 @@ export function Overlays({
                           onOpenProduct(p.id);
                           onCloseAll();
                         }}
-                        className="text-left text-sm font-semibold text-neutral-950 hover:text-[#d98200] line-clamp-2 mt-0.5"
+                        className="text-left text-sm font-semibold text-neutral-950 dark:text-neutral-100 hover:text-[#d98200] dark:hover:text-[#faa619] line-clamp-2 mt-0.5"
                       >
                         {p.title}
                       </button>
-                      <div className="text-sm font-bold text-neutral-950 tabular-nums mt-1">
+                      <div className="text-sm font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
                         {formatINR(p.price)}
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-2.5">
                         <button
                           type="button"
                           onClick={() => onAddToBag(p, p.sizes[0])}
-                          className="px-3 py-1.5 border border-neutral-950 text-xs font-bold uppercase rounded-md hover:bg-[#faa619] hover:border-[#faa619]"
+                          className="px-3 py-1.5 border border-neutral-950 dark:border-neutral-600 text-xs font-bold uppercase rounded-md hover:bg-[#faa619] hover:border-[#faa619] hover:text-neutral-950"
                         >
                           Move to Basket
                         </button>
                         <button
                           type="button"
                           onClick={() => onToggleWishlist(p.id)}
-                          className="text-xs font-semibold text-red-600"
+                          className="text-xs font-semibold text-red-600 dark:text-red-400"
                         >
                           Remove
                         </button>
@@ -390,18 +408,18 @@ export function Overlays({
 
       {/* Quick View Modal */}
       {quickViewProduct && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-2xl bg-white rounded-lg z-10 overflow-hidden shadow-2xl">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg z-10 overflow-hidden shadow-2xl">
           <button
             type="button"
             onClick={onCloseAll}
             aria-label="Close quick view"
-            className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/90 text-neutral-700 hover:text-neutral-950"
+            className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/90 dark:bg-neutral-950/90 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <div className="aspect-[3/4] bg-neutral-100">
+            <div className="aspect-[3/4] bg-neutral-100 dark:bg-neutral-800">
               <ResilientImage
                 src={quickViewProduct.gallery[0]}
                 alt={quickViewProduct.title}
@@ -410,34 +428,34 @@ export function Overlays({
             </div>
             <div className="p-6 flex flex-col justify-between gap-4">
               <div className="space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-[#d98200]">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#d98200] dark:text-[#faa619]">
                   {quickViewProduct.brand}
                 </div>
-                <h3 className="text-lg font-bold text-neutral-950 leading-snug">
+                <h3 className="text-lg font-bold text-neutral-950 dark:text-neutral-50 leading-snug">
                   {quickViewProduct.title}
                 </h3>
                 <div className="flex items-baseline gap-2.5 tabular-nums">
-                  <span className="text-xl font-bold text-neutral-950">
+                  <span className="text-xl font-bold text-neutral-950 dark:text-white">
                     {formatINR(quickViewProduct.price)}
                   </span>
-                  <span className="text-sm text-neutral-400 line-through">
+                  <span className="text-sm text-neutral-400 dark:text-neutral-500 line-through">
                     {formatINR(quickViewProduct.mrp)}
                   </span>
                 </div>
-                <p className="text-xs text-neutral-600 leading-relaxed">
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
                   {quickViewProduct.description}
                 </p>
 
                 <div>
-                  <div className="flex items-center justify-between text-xs font-bold text-neutral-700 mb-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-2">
                     <span>Select Size: {qvSize}</span>
                     <span
                       className={`tabular-nums ${
                         (quickViewProduct.sizeStock[qvSize] ?? 0) === 0
-                          ? 'text-red-600'
+                          ? 'text-red-600 dark:text-red-400'
                           : (quickViewProduct.sizeStock[qvSize] ?? 0) <= 3
-                          ? 'text-amber-700'
-                          : 'text-emerald-700'
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : 'text-emerald-700 dark:text-emerald-400'
                       }`}
                     >
                       {(quickViewProduct.sizeStock[qvSize] ?? 0) === 0
@@ -456,10 +474,10 @@ export function Overlays({
                           onClick={() => setQvSize(s)}
                           className={`min-w-[44px] h-9 px-3 text-xs font-semibold rounded-md border ${
                             qvSize === s
-                              ? 'bg-neutral-950 text-white border-neutral-950'
+                              ? 'bg-neutral-950 text-white border-neutral-950 dark:bg-[#faa619] dark:text-neutral-950 dark:border-[#faa619]'
                               : soldOut
-                              ? 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
-                              : 'bg-white text-neutral-900 border-neutral-300'
+                              ? 'bg-neutral-100 dark:bg-neutral-950 text-neutral-400 dark:text-neutral-600 border-neutral-200 dark:border-neutral-800 line-through'
+                              : 'bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700'
                           }`}
                         >
                           {s}
@@ -478,7 +496,7 @@ export function Overlays({
                     onAddToBag(quickViewProduct, qvSize || quickViewProduct.sizes[0]);
                     onCloseAll();
                   }}
-                  className="w-full h-11 bg-[#faa619] hover:bg-[#e6950c] disabled:bg-neutral-200 disabled:text-neutral-500 text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
+                  className="w-full h-11 bg-[#faa619] hover:bg-[#e6950c] disabled:bg-neutral-200 dark:disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
                 >
                   {(quickViewProduct.sizeStock[qvSize] ?? 0) <= 0
                     ? 'Out of Stock in Selected Size'
@@ -490,7 +508,7 @@ export function Overlays({
                     onOpenProduct(quickViewProduct.id);
                     onCloseAll();
                   }}
-                  className="w-full h-10 border border-neutral-300 hover:border-neutral-950 text-neutral-900 text-xs font-bold uppercase tracking-wider rounded-md"
+                  className="w-full h-10 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-400 text-neutral-900 dark:text-neutral-100 text-xs font-bold uppercase tracking-wider rounded-md"
                 >
                   View Full Product Page
                 </button>
@@ -502,28 +520,34 @@ export function Overlays({
 
       {/* Size Guide Modal */}
       {sizeGuideOpen && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-lg z-10 p-6 shadow-2xl">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg z-10 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-bold text-neutral-950">Standard Size Guide (Inches)</h3>
+            <h3 className="text-base font-bold text-neutral-950 dark:text-neutral-50">
+              Standard Size Guide (Inches)
+            </h3>
             <button
               type="button"
               onClick={onCloseAll}
               aria-label="Close size guide"
-              className="p-1 text-neutral-500 hover:text-neutral-950"
+              className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-xs text-neutral-600 mb-4">
+          <p className="text-xs text-neutral-600 dark:text-neutral-400 mb-4">
             Standard body measurements across Jhonty Hub menswear collections:
           </p>
           <table className="w-full text-xs border-collapse tabular-nums">
             <thead>
-              <tr className="bg-neutral-100 text-neutral-900">
-                <th className="border border-neutral-200 p-2 text-left">Size</th>
-                <th className="border border-neutral-200 p-2">Chest / Bust</th>
-                <th className="border border-neutral-200 p-2">Waist</th>
-                <th className="border border-neutral-200 p-2">Hip</th>
+              <tr className="bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
+                <th className="border border-neutral-200 dark:border-neutral-700 p-2 text-left">
+                  Size
+                </th>
+                <th className="border border-neutral-200 dark:border-neutral-700 p-2">
+                  Chest / Bust
+                </th>
+                <th className="border border-neutral-200 dark:border-neutral-700 p-2">Waist</th>
+                <th className="border border-neutral-200 dark:border-neutral-700 p-2">Hip</th>
               </tr>
             </thead>
             <tbody>
@@ -535,10 +559,18 @@ export function Overlays({
                 ['XL / 44', '43–45"', '36–38"', '45–47"'],
               ].map((row) => (
                 <tr key={row[0]}>
-                  <td className="border border-neutral-200 p-2 font-bold">{row[0]}</td>
-                  <td className="border border-neutral-200 p-2 text-center">{row[1]}</td>
-                  <td className="border border-neutral-200 p-2 text-center">{row[2]}</td>
-                  <td className="border border-neutral-200 p-2 text-center">{row[3]}</td>
+                  <td className="border border-neutral-200 dark:border-neutral-700 p-2 font-bold">
+                    {row[0]}
+                  </td>
+                  <td className="border border-neutral-200 dark:border-neutral-700 p-2 text-center">
+                    {row[1]}
+                  </td>
+                  <td className="border border-neutral-200 dark:border-neutral-700 p-2 text-center">
+                    {row[2]}
+                  </td>
+                  <td className="border border-neutral-200 dark:border-neutral-700 p-2 text-center">
+                    {row[3]}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -548,24 +580,26 @@ export function Overlays({
 
       {/* Sign In Modal */}
       {authOpen && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white rounded-lg z-10 p-6 shadow-2xl">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg z-10 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-bold text-neutral-950">Sign In / Sign Up</h3>
+            <h3 className="text-lg font-bold text-neutral-950 dark:text-neutral-50">
+              Sign In / Sign Up
+            </h3>
             <button
               type="button"
               onClick={onCloseAll}
               aria-label="Close sign in"
-              className="p-1 text-neutral-500 hover:text-neutral-950"
+              className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-sm text-neutral-600 mb-5">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-5">
             Access Jhonty Club member deals, saved wishlists, and faster Madhapur store pickup.
           </p>
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Your Name or Mobile Number
               </label>
               <input
@@ -574,7 +608,7 @@ export function Overlays({
                 value={authName}
                 onChange={(e) => setAuthName(e.target.value)}
                 placeholder="e.g. Aarav / +91 98765 43210"
-                className="w-full h-11 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                className="w-full h-11 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-100 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
               />
             </div>
             <button

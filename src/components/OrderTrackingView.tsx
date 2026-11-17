@@ -11,16 +11,19 @@ import { formatINR } from '../data/catalog';
 import { OrderTrackingRecord, TrackingPoint } from '../data/tracking';
 
 interface OrderTrackingViewProps {
+  theme: 'light' | 'dark';
   orders: OrderTrackingRecord[];
   initialOrderId: string | null;
   onBackHome: () => void;
 }
 
 export function OrderTrackingView({
+  theme,
   orders,
   initialOrderId,
   onBackHome,
 }: OrderTrackingViewProps) {
+  const isDark = theme === 'dark';
   const defaultOrder =
     orders.find((o) => o.orderId === initialOrderId) || orders[0];
 
@@ -84,9 +87,9 @@ export function OrderTrackingView({
     .join(' ');
 
   return (
-    <main className="bg-neutral-50 min-h-[75vh] pb-16">
+    <main className="bg-neutral-50 dark:bg-neutral-950 min-h-[75vh] pb-16 transition-colors">
       {/* Header Banner */}
-      <section className="bg-neutral-950 text-white py-11">
+      <section className="bg-neutral-950 text-white py-11 border-b border-transparent dark:border-neutral-800">
         <div className="max-w-[1320px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#faa619] mb-2">
@@ -113,7 +116,7 @@ export function OrderTrackingView({
 
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 -mt-6">
         {/* Search Input Card */}
-        <div className="bg-white border border-neutral-200 rounded-lg p-5 sm:p-6 shadow-sm mb-8">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5 sm:p-6 shadow-sm mb-8">
           <form onSubmit={handleLookup} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <input
@@ -122,7 +125,7 @@ export function OrderTrackingView({
                 onChange={(e) => setInputOrderId(e.target.value)}
                 placeholder="Enter Order ID (e.g. JH-482910)"
                 aria-label="Order ID"
-                className="w-full h-12 pl-4 pr-10 bg-neutral-50 border border-neutral-200 rounded-md text-sm font-semibold uppercase tracking-wide tabular-nums focus:bg-white focus:border-[#faa619] focus:outline-none"
+                className="w-full h-12 pl-4 pr-10 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm font-semibold uppercase tracking-wide tabular-nums text-neutral-950 dark:text-neutral-100 placeholder:text-neutral-400 focus:bg-white dark:focus:bg-neutral-950 focus:border-[#faa619] focus:outline-none"
               />
               <Search className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
             </div>
@@ -135,11 +138,15 @@ export function OrderTrackingView({
           </form>
 
           {lookupError && (
-            <p className="mt-3 text-xs font-semibold text-red-600">{lookupError}</p>
+            <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
+              {lookupError}
+            </p>
           )}
 
-          <div className="mt-4 pt-3.5 border-t border-neutral-100 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-neutral-500 mr-1">Recent &amp; Sample Orders:</span>
+          <div className="mt-4 pt-3.5 border-t border-neutral-100 dark:border-neutral-800 flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-semibold text-neutral-500 dark:text-neutral-400 mr-1">
+              Recent &amp; Sample Orders:
+            </span>
             {orders.map((ord) => {
               const isSelected = ord.orderId === activeOrder.orderId;
               return (
@@ -149,8 +156,8 @@ export function OrderTrackingView({
                   onClick={() => selectOrderRecord(ord)}
                   className={`px-3 py-1.5 rounded-md border font-semibold tabular-nums transition-colors ${
                     isSelected
-                      ? 'bg-neutral-950 text-white border-neutral-950'
-                      : 'bg-neutral-50 text-neutral-800 border-neutral-200 hover:border-neutral-400'
+                      ? 'bg-neutral-950 dark:bg-[#faa619] text-white dark:text-neutral-950 border-neutral-950 dark:border-[#faa619]'
+                      : 'bg-neutral-50 dark:bg-neutral-950 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600'
                   }`}
                 >
                   {ord.orderId} · {ord.status}
@@ -161,66 +168,66 @@ export function OrderTrackingView({
         </div>
 
         {/* Status Summary Strip */}
-        <div className="bg-white border border-neutral-200 rounded-lg p-5 sm:p-6 mb-6">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5 sm:p-6 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                 Order Reference
               </div>
-              <div className="text-lg font-bold text-neutral-950 tabular-nums mt-1">
+              <div className="text-lg font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
                 {activeOrder.orderId}
               </div>
-              <div className="text-xs text-neutral-500 mt-0.5">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                 Placed {activeOrder.placedAt} · {formatINR(activeOrder.total)}
               </div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                 Current Status
               </div>
-              <div className="flex items-center gap-2 text-lg font-bold text-emerald-700 mt-1">
+              <div className="flex items-center gap-2 text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-1">
                 {activeOrder.status === 'Delivered' ? (
                   <CheckCircle2 className="w-5 h-5 shrink-0" />
                 ) : (
-                  <Truck className="w-5 h-5 shrink-0 text-[#d98200]" />
+                  <Truck className="w-5 h-5 shrink-0 text-[#d98200] dark:text-[#faa619]" />
                 )}
                 <span>{activeOrder.status}</span>
               </div>
-              <div className="text-xs text-neutral-500 mt-0.5 tabular-nums">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 tabular-nums">
                 {activeOrder.progressPct}% journey completed
               </div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                 Estimated Delivery
               </div>
-              <div className="flex items-center gap-1.5 text-lg font-bold text-neutral-950 mt-1">
-                <Clock className="w-4 h-4 text-[#d98200] shrink-0" />
+              <div className="flex items-center gap-1.5 text-lg font-bold text-neutral-950 dark:text-white mt-1">
+                <Clock className="w-4 h-4 text-[#d98200] dark:text-[#faa619] shrink-0" />
                 <span>{activeOrder.estimatedDelivery}</span>
               </div>
-              <div className="text-xs text-neutral-500 mt-0.5">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                 {activeOrder.destinationCity}
               </div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                 Courier &amp; Tracking AWB
               </div>
-              <div className="text-base font-bold text-neutral-950 mt-1">
+              <div className="text-base font-bold text-neutral-950 dark:text-white mt-1">
                 {activeOrder.carrier}
               </div>
-              <div className="text-xs font-mono text-neutral-600 tabular-nums mt-0.5">
+              <div className="text-xs font-mono text-neutral-600 dark:text-neutral-400 tabular-nums mt-0.5">
                 {activeOrder.awb}
               </div>
             </div>
           </div>
 
           {/* Progress Track */}
-          <div className="mt-5 pt-4 border-t border-neutral-100">
-            <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+          <div className="mt-5 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#faa619] transition-all duration-300"
                 style={{ width: `${activeOrder.progressPct}%` }}
@@ -233,9 +240,9 @@ export function OrderTrackingView({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left: Shipment Timeline & Package Items */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white border border-neutral-200 rounded-lg p-6">
-              <h2 className="text-base font-bold text-neutral-950 mb-5 flex items-center gap-2">
-                <Package className="w-4 h-4 text-[#d98200]" />
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-6">
+              <h2 className="text-base font-bold text-neutral-950 dark:text-white mb-5 flex items-center gap-2">
+                <Package className="w-4 h-4 text-[#d98200] dark:text-[#faa619]" />
                 <span>Transit Milestones</span>
               </h2>
 
@@ -249,16 +256,18 @@ export function OrderTrackingView({
                         <span
                           className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-1 ${
                             wp.current
-                              ? 'bg-[#faa619] border-neutral-950'
+                              ? 'bg-[#faa619] border-neutral-950 dark:border-white'
                               : wp.completed
-                                ? 'bg-emerald-700 border-emerald-700'
-                                : 'bg-white border-neutral-300'
+                                ? 'bg-emerald-700 border-emerald-700 dark:bg-emerald-500 dark:border-emerald-500'
+                                : 'bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700'
                           }`}
                         />
                         {!isLast && (
                           <span
                             className={`w-px flex-1 mt-1.5 ${
-                              wp.completed ? 'bg-neutral-300' : 'bg-neutral-200'
+                              wp.completed
+                                ? 'bg-neutral-300 dark:bg-neutral-700'
+                                : 'bg-neutral-200 dark:bg-neutral-800'
                             }`}
                           />
                         )}
@@ -275,22 +284,22 @@ export function OrderTrackingView({
                           <span
                             className={`text-sm font-bold ${
                               wp.current
-                                ? 'text-neutral-950'
+                                ? 'text-neutral-950 dark:text-white'
                                 : wp.completed
-                                  ? 'text-neutral-900'
-                                  : 'text-neutral-400'
+                                  ? 'text-neutral-900 dark:text-neutral-100'
+                                  : 'text-neutral-400 dark:text-neutral-500'
                             }`}
                           >
                             {wp.label}
                           </span>
-                          <span className="text-xs text-neutral-500 tabular-nums">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
                             {wp.timestamp}
                           </span>
                         </div>
-                        <div className="text-xs font-semibold text-[#d98200] mt-0.5">
+                        <div className="text-xs font-semibold text-[#d98200] dark:text-[#faa619] mt-0.5">
                           {wp.city}
                         </div>
-                        <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
+                        <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">
                           {wp.detail}
                         </p>
                       </button>
@@ -300,27 +309,29 @@ export function OrderTrackingView({
               </ol>
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-lg p-6">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-700 mb-3">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-6">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300 mb-3">
                 Delivery Destination &amp; Items
               </h3>
-              <p className="text-xs text-neutral-600 pb-3 border-b border-neutral-100">
+              <p className="text-xs text-neutral-600 dark:text-neutral-400 pb-3 border-b border-neutral-100 dark:border-neutral-800">
                 {activeOrder.destinationAddress}
               </p>
-              <div className="divide-y divide-neutral-100 mt-2">
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800 mt-2">
                 {activeOrder.items.map((item, idx) => (
                   <div
                     key={`${item.title}-${idx}`}
                     className="py-2.5 flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="min-w-0">
-                      <span className="font-bold text-neutral-950">{item.brand}</span>
-                      <span className="text-neutral-600">
+                      <span className="font-bold text-neutral-950 dark:text-white">
+                        {item.brand}
+                      </span>
+                      <span className="text-neutral-600 dark:text-neutral-400">
                         {' '}
                         · {item.title} ({item.size}) × {item.qty}
                       </span>
                     </div>
-                    <span className="font-bold text-neutral-950 tabular-nums shrink-0">
+                    <span className="font-bold text-neutral-950 dark:text-white tabular-nums shrink-0">
                       {formatINR(item.price * item.qty)}
                     </span>
                   </div>
@@ -330,24 +341,24 @@ export function OrderTrackingView({
           </div>
 
           {/* Right: Interactive Corridor Route Map */}
-          <div className="lg:col-span-7 bg-white border border-neutral-200 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="lg:col-span-7 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-bold text-neutral-950 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-[#d98200]" />
+                <h2 className="text-base font-bold text-neutral-950 dark:text-white flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-[#d98200] dark:text-[#faa619]" />
                   <span>Package Route Map</span>
                 </h2>
-                <p className="text-xs text-neutral-500 mt-0.5">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   Click any checkpoint pin on the route to inspect transit details
                 </p>
               </div>
-              <div className="text-xs font-medium text-neutral-600">
+              <div className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                 Completed Route · Remaining Corridor
               </div>
             </div>
 
             {/* Stylized India Logistics Corridor SVG Map */}
-            <div className="relative bg-[#f5f4f0] border-b border-neutral-200">
+            <div className="relative bg-[#f5f4f0] dark:bg-[#0d0d10] border-b border-neutral-200 dark:border-neutral-800">
               <svg
                 viewBox="0 0 600 420"
                 className="w-full h-[360px] sm:h-[420px] select-none"
@@ -364,7 +375,7 @@ export function OrderTrackingView({
                     <path
                       d="M 28 0 L 0 0 0 28"
                       fill="none"
-                      stroke="#e5e2da"
+                      stroke={isDark ? '#1f1f24' : '#e5e2da'}
                       strokeWidth="1"
                     />
                   </pattern>
@@ -375,8 +386,8 @@ export function OrderTrackingView({
                 {/* Stylized India Mainland Silhouette */}
                 <path
                   d="M 248 44 L 298 62 L 325 104 L 386 144 L 468 174 L 492 204 L 444 236 L 404 264 L 352 308 L 326 364 L 284 402 L 246 376 L 218 320 L 178 274 L 154 220 L 122 184 L 156 156 L 194 128 L 214 78 Z"
-                  fill="#ffffff"
-                  stroke="#d6d3cb"
+                  fill={isDark ? '#17171b' : '#ffffff'}
+                  stroke={isDark ? '#33333b' : '#d6d3cb'}
                   strokeWidth="2"
                   strokeLinejoin="round"
                 />
@@ -391,12 +402,17 @@ export function OrderTrackingView({
                   { name: 'Kolkata', x: 432, y: 222 },
                 ].map((city) => (
                   <g key={city.name}>
-                    <circle cx={city.x} cy={city.y} r="2.5" fill="#d4d4d8" />
+                    <circle
+                      cx={city.x}
+                      cy={city.y}
+                      r="2.5"
+                      fill={isDark ? '#52525b' : '#d4d4d8'}
+                    />
                     <text
                       x={city.x + 7}
                       y={city.y + 3}
                       fontSize="10"
-                      fill="#a1a1aa"
+                      fill={isDark ? '#71717a' : '#a1a1aa'}
                       fontFamily="DM Sans, sans-serif"
                     >
                       {city.name}
@@ -409,7 +425,7 @@ export function OrderTrackingView({
                   <path
                     d={fullPathD}
                     fill="none"
-                    stroke="#a3a3a3"
+                    stroke={isDark ? '#52525b' : '#a3a3a3'}
                     strokeWidth="2.5"
                     strokeDasharray="6 5"
                     strokeLinecap="round"
@@ -432,6 +448,7 @@ export function OrderTrackingView({
                 {/* Waypoint Markers */}
                 {allPoints.map((pt, idx) => {
                   const isSelected = selectedWaypoint.id === pt.id;
+                  const pinOutline = isDark ? '#f4f4f5' : '#111111';
                   return (
                     <g
                       key={pt.id}
@@ -444,7 +461,7 @@ export function OrderTrackingView({
                           cy={pt.y}
                           r="16"
                           fill="#faa619"
-                          fillOpacity="0.25"
+                          fillOpacity="0.28"
                         />
                       )}
                       {isSelected && (
@@ -453,7 +470,7 @@ export function OrderTrackingView({
                           cy={pt.y}
                           r="12"
                           fill="none"
-                          stroke="#111111"
+                          stroke={isDark ? '#faa619' : '#111111'}
                           strokeWidth="1.5"
                         />
                       )}
@@ -465,10 +482,14 @@ export function OrderTrackingView({
                           pt.current
                             ? '#faa619'
                             : pt.completed
-                              ? '#111111'
-                              : '#ffffff'
+                              ? isDark
+                                ? '#fafafa'
+                                : '#111111'
+                              : isDark
+                                ? '#18181b'
+                                : '#ffffff'
                         }
-                        stroke="#111111"
+                        stroke={pt.current && isDark ? '#09090b' : pinOutline}
                         strokeWidth="2"
                       />
                       <text
@@ -477,7 +498,7 @@ export function OrderTrackingView({
                         textAnchor="middle"
                         fontSize="10.5"
                         fontWeight="700"
-                        fill="#111111"
+                        fill={isDark ? '#fafafa' : '#111111'}
                         fontFamily="DM Sans, sans-serif"
                       >
                         {idx + 1}. {pt.city}
@@ -489,17 +510,19 @@ export function OrderTrackingView({
             </div>
 
             {/* Selected Checkpoint Detail Bar */}
-            <div className="p-5 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 bg-white dark:bg-neutral-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-[#d98200]">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#d98200] dark:text-[#faa619]">
                   Selected Checkpoint · {selectedWaypoint.city}
                 </div>
-                <div className="text-sm font-bold text-neutral-950 mt-0.5">
+                <div className="text-sm font-bold text-neutral-950 dark:text-white mt-0.5">
                   {selectedWaypoint.label}
                 </div>
-                <p className="text-xs text-neutral-600 mt-0.5">{selectedWaypoint.detail}</p>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                  {selectedWaypoint.detail}
+                </p>
               </div>
-              <div className="text-xs font-semibold text-neutral-700 tabular-nums shrink-0">
+              <div className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 tabular-nums shrink-0">
                 {selectedWaypoint.timestamp}
               </div>
             </div>

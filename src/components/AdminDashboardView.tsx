@@ -79,12 +79,12 @@ function getStockStatus(p: Product): {
   textClass: string;
 } {
   if (p.stock <= 0) {
-    return { key: 'out', label: 'Out of Stock', textClass: 'text-red-600' };
+    return { key: 'out', label: 'Out of Stock', textClass: 'text-red-600 dark:text-red-400' };
   }
   if (p.stock <= p.reorderLevel) {
-    return { key: 'low', label: 'Low Stock', textClass: 'text-amber-700' };
+    return { key: 'low', label: 'Low Stock', textClass: 'text-amber-700 dark:text-amber-400' };
   }
-  return { key: 'in', label: 'In Stock', textClass: 'text-emerald-700' };
+  return { key: 'in', label: 'In Stock', textClass: 'text-emerald-700 dark:text-emerald-400' };
 }
 
 interface ProductFormState {
@@ -326,16 +326,16 @@ export function AdminDashboardView({
   ];
 
   return (
-    <div className="bg-neutral-50 min-h-[calc(100vh-64px)]">
+    <div className="bg-neutral-50 dark:bg-[#080808] min-h-[calc(100vh-64px)] transition-colors">
       <div className="max-w-[1440px] mx-auto flex flex-col lg:flex-row">
         {/* Left Sidebar (Desktop) */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 bg-white border-r border-neutral-200 min-h-[calc(100vh-64px)] p-4 justify-between">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 bg-white dark:bg-[#0b0b0b] border-r border-neutral-200 dark:border-neutral-800 min-h-[calc(100vh-64px)] p-4 justify-between">
           <div>
-            <div className="px-2.5 pb-4 mb-3 border-b border-neutral-200">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-[#d98200]">
+            <div className="px-2.5 pb-4 mb-3 border-b border-neutral-200 dark:border-neutral-800">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#d98200] dark:text-[#faa619]">
                 Operations Console
               </div>
-              <div className="text-sm font-bold text-neutral-950 mt-0.5">
+              <div className="text-sm font-bold text-neutral-950 dark:text-white mt-0.5">
                 Jhonty Hub Backoffice
               </div>
             </div>
@@ -351,8 +351,8 @@ export function AdminDashboardView({
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-semibold transition-colors ${
                       active
-                        ? 'bg-neutral-950 text-white'
-                        : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950'
+                        ? 'bg-neutral-950 dark:bg-[#faa619] text-white dark:text-neutral-950'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-neutral-950 dark:hover:text-white'
                     }`}
                   >
                     <span className="inline-flex items-center gap-2.5">
@@ -362,7 +362,9 @@ export function AdminDashboardView({
                     {typeof item.count === 'number' && (
                       <span
                         className={`text-xs tabular-nums font-mono ${
-                          active ? 'text-[#faa619]' : 'text-neutral-500'
+                          active
+                            ? 'text-[#faa619] dark:text-neutral-950'
+                            : 'text-neutral-500 dark:text-neutral-400'
                         }`}
                       >
                         {item.count}
@@ -374,11 +376,11 @@ export function AdminDashboardView({
             </nav>
           </div>
 
-          <div className="pt-4 border-t border-neutral-200">
+          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
             <button
               type="button"
               onClick={onBackToStore}
-              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-neutral-300 hover:border-neutral-950 rounded-md text-xs font-bold uppercase tracking-wider text-neutral-900 bg-white transition-colors"
+              className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 rounded-md text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Storefront</span>
@@ -397,8 +399,8 @@ export function AdminDashboardView({
                 onClick={() => setActiveTab(item.id)}
                 className={`px-3.5 py-2 rounded-md text-xs font-bold whitespace-nowrap shrink-0 border ${
                   activeTab === item.id
-                    ? 'bg-neutral-950 text-white border-neutral-950'
-                    : 'bg-white text-neutral-800 border-neutral-200'
+                    ? 'bg-neutral-950 dark:bg-[#faa619] text-white dark:text-neutral-950 border-neutral-950 dark:border-[#faa619]'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-800'
                 }`}
               >
                 {item.label} ({item.count})
@@ -407,13 +409,15 @@ export function AdminDashboardView({
           </div>
 
           {/* Top Breadcrumb Bar + Primary Actions (Max 2 on Right) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-200 dark:border-neutral-800">
             <div>
-              <div className="text-xs font-medium text-neutral-500">
+              <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
                 Jhonty Hub / Admin Console /{' '}
-                <span className="text-neutral-950 font-semibold">{sectionLabelMap[activeTab]}</span>
+                <span className="text-neutral-950 dark:text-white font-semibold">
+                  {sectionLabelMap[activeTab]}
+                </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-950 mt-1">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-950 dark:text-white mt-1">
                 {sectionLabelMap[activeTab]}
               </h1>
             </div>
@@ -423,7 +427,7 @@ export function AdminDashboardView({
                 type="button"
                 disabled={isBusy}
                 onClick={() => onRefreshInventory(10)}
-                className="inline-flex items-center gap-1.5 h-10 px-3.5 bg-white border border-neutral-300 hover:border-neutral-950 text-neutral-900 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 h-10 px-3.5 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-900 dark:text-neutral-100 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 disabled:opacity-50 transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isBusy ? 'animate-spin' : ''}`} />
                 <span>Refresh Low Stock</span>
@@ -441,44 +445,56 @@ export function AdminDashboardView({
 
           {/* 4-Column Summary Strip (Single Elevation) */}
           <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-neutral-200 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500">Active Catalog SKUs</div>
-              <div className="text-2xl font-bold text-neutral-950 tabular-nums mt-1">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                Active Catalog SKUs
+              </div>
+              <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
                 {metrics.totalSkus}
               </div>
-              <div className="text-xs text-neutral-500 mt-1">Across 3 Hyderabad stores</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                Across 3 Hyderabad stores
+              </div>
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500">Total Units on Hand</div>
-              <div className="text-2xl font-bold text-neutral-950 tabular-nums mt-1">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                Total Units on Hand
+              </div>
+              <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
                 {metrics.totalUnits.toLocaleString('en-IN')}
               </div>
-              <div className="text-xs text-emerald-700 font-medium mt-1">
+              <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium mt-1">
                 Synced with live storefront
               </div>
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500">Stock Alerts</div>
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                Stock Alerts
+              </div>
               <div
                 className={`text-2xl font-bold tabular-nums mt-1 ${
-                  metrics.alertCount > 0 ? 'text-amber-700' : 'text-emerald-700'
+                  metrics.alertCount > 0
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-emerald-700 dark:text-emerald-400'
                 }`}
               >
                 {metrics.alertCount}
               </div>
-              <div className="text-xs text-neutral-600 mt-1 tabular-nums">
+              <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 tabular-nums">
                 {metrics.lowStockCount} Low Stock · {metrics.outOfStockCount} Out of Stock
               </div>
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-lg p-4">
-              <div className="text-xs font-semibold text-neutral-500">Inventory Retail Value</div>
-              <div className="text-2xl font-bold text-neutral-950 tabular-nums mt-1">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+              <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                Inventory Retail Value
+              </div>
+              <div className="text-2xl font-bold text-neutral-950 dark:text-white tabular-nums mt-1">
                 {formatINR(metrics.inventoryValue)}
               </div>
-              <div className="text-xs text-neutral-500 mt-1 tabular-nums">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 tabular-nums">
                 {orders.length} active &amp; completed orders
               </div>
             </div>
@@ -486,9 +502,9 @@ export function AdminDashboardView({
 
           {/* INVENTORY OR CATALOG TAB */}
           {(activeTab === 'inventory' || activeTab === 'catalog') && (
-            <section className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
               {/* Filter Bar */}
-              <div className="p-4 border-b border-neutral-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="relative flex-1 max-w-md">
                   <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -497,7 +513,7 @@ export function AdminDashboardView({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search SKU, product title, brand, or store..."
                     aria-label="Filter inventory"
-                    className="w-full h-10 pl-9 pr-3 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:bg-white focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 pl-9 pr-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 placeholder:text-neutral-400 focus:bg-white dark:focus:bg-neutral-950 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
 
@@ -506,7 +522,7 @@ export function AdminDashboardView({
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value as Category)}
                     aria-label="Filter by department"
-                    className="h-10 px-3 bg-white border border-neutral-200 rounded-md text-xs font-semibold text-neutral-800 focus:border-[#faa619] focus:outline-none"
+                    className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     <option value="All">All Departments</option>
                     {CATEGORIES.map((c) => (
@@ -520,7 +536,7 @@ export function AdminDashboardView({
                     value={storeFilter}
                     onChange={(e) => setStoreFilter(e.target.value)}
                     aria-label="Filter by store location"
-                    className="h-10 px-3 bg-white border border-neutral-200 rounded-md text-xs font-semibold text-neutral-800 focus:border-[#faa619] focus:outline-none"
+                    className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     <option value="All">All Store Locations</option>
                     {STORE_LOCATIONS.map((st) => (
@@ -534,7 +550,7 @@ export function AdminDashboardView({
                     value={stockFilter}
                     onChange={(e) => setStockFilter(e.target.value as StockFilter)}
                     aria-label="Filter by stock status"
-                    className="h-10 px-3 bg-white border border-neutral-200 rounded-md text-xs font-semibold text-neutral-800 focus:border-[#faa619] focus:outline-none"
+                    className="h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-800 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     <option value="all">All Stock States</option>
                     <option value="in">In Stock</option>
@@ -546,15 +562,15 @@ export function AdminDashboardView({
 
               {/* Loading / Empty / Table */}
               {isLoading ? (
-                <div className="p-10 text-center text-sm text-neutral-500">
+                <div className="p-10 text-center text-sm text-neutral-500 dark:text-neutral-400">
                   Loading live Jhonty Hub inventory...
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <div className="p-12 text-center">
-                  <p className="text-base font-bold text-neutral-950">
+                  <p className="text-base font-bold text-neutral-950 dark:text-white">
                     No matching products in inventory
                   </p>
-                  <p className="text-sm text-neutral-500 mt-1 mb-5">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 mb-5">
                     Try clearing your search or stock filter, or add a new SKU.
                   </p>
                   <button
@@ -565,7 +581,7 @@ export function AdminDashboardView({
                       setStockFilter('all');
                       setStoreFilter('All');
                     }}
-                    className="px-4 py-2 border border-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
+                    className="px-4 py-2 border border-neutral-950 dark:border-neutral-700 text-neutral-950 dark:text-white text-xs font-bold uppercase tracking-wider rounded-md"
                   >
                     Reset Filters
                   </button>
@@ -574,7 +590,7 @@ export function AdminDashboardView({
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-600">
+                      <tr className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
                         <th className="py-3 px-4">Product &amp; SKU</th>
                         <th className="py-3 px-4">Department &amp; Store</th>
                         <th className="py-3 px-4">Price / MRP</th>
@@ -583,17 +599,20 @@ export function AdminDashboardView({
                         <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-200 text-sm">
+                    <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
                       {filteredProducts.map((p) => {
                         const status = getStockStatus(p);
                         return (
-                          <tr key={p.id} className="hover:bg-neutral-50/80 transition-colors">
+                          <tr
+                            key={p.id}
+                            className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors"
+                          >
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-3 min-w-[240px]">
                                 <button
                                   type="button"
                                   onClick={() => onOpenProduct(p.id)}
-                                  className="w-11 h-14 rounded-md overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0"
+                                  className="w-11 h-14 rounded-md overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shrink-0"
                                 >
                                   <ResilientImage
                                     src={p.gallery[0]}
@@ -602,13 +621,13 @@ export function AdminDashboardView({
                                   />
                                 </button>
                                 <div className="min-w-0">
-                                  <div className="text-xs font-mono font-semibold text-neutral-500 tabular-nums">
+                                  <div className="text-xs font-mono font-semibold text-neutral-500 dark:text-neutral-400 tabular-nums">
                                     {p.sku} · {p.brand}
                                   </div>
                                   <button
                                     type="button"
                                     onClick={() => openEditModal(p)}
-                                    className="text-left font-semibold text-neutral-950 hover:text-[#d98200] line-clamp-1 mt-0.5"
+                                    className="text-left font-semibold text-neutral-950 dark:text-white hover:text-[#d98200] dark:hover:text-[#faa619] line-clamp-1 mt-0.5"
                                   >
                                     {p.title}
                                   </button>
@@ -617,27 +636,31 @@ export function AdminDashboardView({
                             </td>
 
                             <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="font-medium text-neutral-900">{p.category}</div>
-                              <div className="text-xs text-neutral-500 mt-0.5">
+                              <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                                {p.category}
+                              </div>
+                              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                                 {p.storeLocation}
                               </div>
                             </td>
 
                             <td className="py-3.5 px-4 whitespace-nowrap tabular-nums">
-                              <div className="font-bold text-neutral-950">{formatINR(p.price)}</div>
-                              <div className="text-xs text-neutral-400 line-through">
+                              <div className="font-bold text-neutral-950 dark:text-white">
+                                {formatINR(p.price)}
+                              </div>
+                              <div className="text-xs text-neutral-400 dark:text-neutral-500 line-through">
                                 {formatINR(p.mrp)}
                               </div>
                             </td>
 
                             <td className="py-3.5 px-4">
-                              <div className="text-xs font-mono text-neutral-700 tabular-nums max-w-[240px] leading-relaxed">
+                              <div className="text-xs font-mono text-neutral-700 dark:text-neutral-300 tabular-nums max-w-[240px] leading-relaxed">
                                 {p.sizes.map((s, idx) => (
                                   <span key={s}>
                                     <span
                                       className={
                                         (p.sizeStock[s] ?? 0) === 0
-                                          ? 'text-red-600 font-semibold'
+                                          ? 'text-red-600 dark:text-red-400 font-semibold'
                                           : ''
                                       }
                                     >
@@ -650,7 +673,9 @@ export function AdminDashboardView({
                             </td>
 
                             <td className="py-3.5 px-4 whitespace-nowrap tabular-nums">
-                              <div className="font-bold text-neutral-950">{p.stock} units</div>
+                              <div className="font-bold text-neutral-950 dark:text-white">
+                                {p.stock} units
+                              </div>
                               <div className={`text-xs font-semibold mt-0.5 ${status.textClass}`}>
                                 {status.label}
                                 {status.key === 'low' ? ` (≤${p.reorderLevel})` : ''}
@@ -664,14 +689,14 @@ export function AdminDashboardView({
                                   disabled={isBusy}
                                   onClick={() => onRestockProduct(p.id, { deltaPerSize: 5 })}
                                   title="Add +5 units to every size"
-                                  className="px-2.5 py-1.5 bg-neutral-100 hover:bg-[#faa619] text-neutral-900 text-xs font-bold rounded-md tabular-nums transition-colors"
+                                  className="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-[#faa619] text-neutral-900 dark:text-neutral-100 hover:text-neutral-950 text-xs font-bold rounded-md tabular-nums transition-colors"
                                 >
                                   +5 Sizes
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => openStockAdjuster(p)}
-                                  className="px-2.5 py-1.5 border border-neutral-300 hover:border-neutral-950 text-neutral-800 text-xs font-semibold rounded-md transition-colors"
+                                  className="px-2.5 py-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-800 dark:text-neutral-200 text-xs font-semibold rounded-md transition-colors"
                                 >
                                   Stock
                                 </button>
@@ -679,7 +704,7 @@ export function AdminDashboardView({
                                   type="button"
                                   onClick={() => openEditModal(p)}
                                   aria-label={`Edit ${p.title}`}
-                                  className="p-1.5 border border-neutral-300 hover:border-neutral-950 text-neutral-700 rounded-md"
+                                  className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-md"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
@@ -700,7 +725,7 @@ export function AdminDashboardView({
                                     type="button"
                                     onClick={() => setConfirmDeleteId(p.id)}
                                     aria-label={`Delete ${p.title}`}
-                                    className="p-1.5 border border-neutral-300 hover:border-red-600 text-neutral-600 hover:text-red-600 rounded-md"
+                                    className="p-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-red-600 dark:hover:border-red-500 text-neutral-600 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 rounded-md"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -719,27 +744,27 @@ export function AdminDashboardView({
 
           {/* ORDERS & FULFILLMENT TAB */}
           {activeTab === 'orders' && (
-            <section className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-              <div className="p-4 border-b border-neutral-200 flex items-center justify-between">
+            <section className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-neutral-950">
+                  <h2 className="text-base font-bold text-neutral-950 dark:text-white">
                     Customer Orders &amp; Dispatch Status
                   </h2>
-                  <p className="text-xs text-neutral-500 mt-0.5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                     Status updates sync immediately with the storefront Order Tracking map.
                   </p>
                 </div>
               </div>
 
               {orders.length === 0 ? (
-                <div className="p-12 text-center text-sm text-neutral-500">
+                <div className="p-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
                   No orders recorded yet.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-neutral-50 border-b border-neutral-200 text-[11px] font-bold uppercase tracking-wider text-neutral-600">
+                      <tr className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
                         <th className="py-3 px-4">Order ID</th>
                         <th className="py-3 px-4">Destination &amp; Carrier</th>
                         <th className="py-3 px-4">Items</th>
@@ -748,25 +773,30 @@ export function AdminDashboardView({
                         <th className="py-3 px-4 text-right">Route</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-200 text-sm">
+                    <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-sm">
                       {orders.map((ord) => (
-                        <tr key={ord.orderId} className="hover:bg-neutral-50/80">
+                        <tr
+                          key={ord.orderId}
+                          className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40"
+                        >
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-mono font-bold text-neutral-950 tabular-nums">
+                            <div className="font-mono font-bold text-neutral-950 dark:text-white tabular-nums">
                               {ord.orderId}
                             </div>
-                            <div className="text-xs text-neutral-500 mt-0.5">{ord.placedAt}</div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                              {ord.placedAt}
+                            </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <div className="font-medium text-neutral-900">
+                            <div className="font-medium text-neutral-900 dark:text-neutral-100">
                               {ord.destinationCity}
                             </div>
-                            <div className="text-xs text-neutral-500 mt-0.5">
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                               {ord.carrier} · {ord.awb}
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <div className="text-xs text-neutral-800 space-y-0.5">
+                            <div className="text-xs text-neutral-800 dark:text-neutral-200 space-y-0.5">
                               {ord.items.map((it, idx) => (
                                 <div key={`${it.title}-${idx}`} className="line-clamp-1">
                                   {it.qty}× {it.brand} ({it.size})
@@ -774,7 +804,7 @@ export function AdminDashboardView({
                               ))}
                             </div>
                           </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap font-bold text-neutral-950 tabular-nums">
+                          <td className="py-3.5 px-4 whitespace-nowrap font-bold text-neutral-950 dark:text-white tabular-nums">
                             {formatINR(ord.total)}
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
@@ -788,7 +818,7 @@ export function AdminDashboardView({
                                 )
                               }
                               aria-label={`Update status for ${ord.orderId}`}
-                              className="h-9 px-2.5 bg-white border border-neutral-300 rounded-md text-xs font-semibold text-neutral-900 focus:border-[#faa619] focus:outline-none"
+                              className="h-9 px-2.5 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-md text-xs font-semibold text-neutral-900 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                             >
                               {ORDER_STATUSES.map((st) => (
                                 <option key={st} value={st}>
@@ -801,7 +831,7 @@ export function AdminDashboardView({
                             <button
                               type="button"
                               onClick={() => onTrackOrder(ord.orderId)}
-                              className="px-3 py-1.5 border border-neutral-300 hover:border-neutral-950 text-xs font-semibold rounded-md"
+                              className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-neutral-500 text-neutral-900 dark:text-neutral-100 text-xs font-semibold rounded-md"
                             >
                               Track Route
                             </button>
@@ -831,31 +861,45 @@ export function AdminDashboardView({
                 return (
                   <div
                     key={st.id}
-                    className="bg-white border border-neutral-200 rounded-lg p-5 flex flex-col justify-between gap-4"
+                    className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-5 flex flex-col justify-between gap-4"
                   >
                     <div>
-                      <div className="text-xs font-mono font-bold text-[#d98200]">
+                      <div className="text-xs font-mono font-bold text-[#d98200] dark:text-[#faa619]">
                         {st.id} · {st.city}
                       </div>
-                      <h3 className="text-base font-bold text-neutral-950 mt-1">{st.name}</h3>
-                      <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">{st.address}</p>
+                      <h3 className="text-base font-bold text-neutral-950 dark:text-white mt-1">
+                        {st.name}
+                      </h3>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1.5 leading-relaxed">
+                        {st.address}
+                      </p>
 
-                      <dl className="grid grid-cols-3 gap-2 pt-4 mt-4 border-t border-neutral-200 tabular-nums">
+                      <dl className="grid grid-cols-3 gap-2 pt-4 mt-4 border-t border-neutral-200 dark:border-neutral-800 tabular-nums">
                         <div>
-                          <dt className="text-[11px] text-neutral-500">SKUs</dt>
-                          <dd className="text-base font-bold text-neutral-950">
+                          <dt className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            SKUs
+                          </dt>
+                          <dd className="text-base font-bold text-neutral-950 dark:text-white">
                             {storeProducts.length}
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-[11px] text-neutral-500">Units</dt>
-                          <dd className="text-base font-bold text-neutral-950">{storeUnits}</dd>
+                          <dt className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            Units
+                          </dt>
+                          <dd className="text-base font-bold text-neutral-950 dark:text-white">
+                            {storeUnits}
+                          </dd>
                         </div>
                         <div>
-                          <dt className="text-[11px] text-neutral-500">Alerts</dt>
+                          <dt className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            Alerts
+                          </dt>
                           <dd
                             className={`text-base font-bold ${
-                              storeAlerts > 0 ? 'text-amber-700' : 'text-emerald-700'
+                              storeAlerts > 0
+                                ? 'text-amber-700 dark:text-amber-400'
+                                : 'text-emerald-700 dark:text-emerald-400'
                             }`}
                           >
                             {storeAlerts}
@@ -870,7 +914,7 @@ export function AdminDashboardView({
                         setStoreFilter(shortName);
                         setActiveTab('inventory');
                       }}
-                      className="w-full h-10 border border-neutral-950 text-neutral-950 hover:bg-[#faa619] hover:border-[#faa619] text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+                      className="w-full h-10 border border-neutral-950 dark:border-neutral-700 text-neutral-950 dark:text-white hover:bg-[#faa619] hover:border-[#faa619] hover:text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
                     >
                       View Store Inventory
                     </button>
@@ -884,17 +928,17 @@ export function AdminDashboardView({
 
       {/* ADD / EDIT PRODUCT MODAL */}
       {productModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-[1px]">
-          <div className="bg-white rounded-lg border border-neutral-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h2 className="text-base font-bold text-neutral-950">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[1px]">
+          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between sticky top-0 bg-white dark:bg-neutral-900 z-10">
+              <h2 className="text-base font-bold text-neutral-950 dark:text-white">
                 {formState.id ? 'Edit Product & Pricing' : 'Add New Catalog Product'}
               </h2>
               <button
                 type="button"
                 onClick={() => setProductModalOpen(false)}
                 aria-label="Close product modal"
-                className="p-1 text-neutral-500 hover:text-neutral-950"
+                className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -902,7 +946,7 @@ export function AdminDashboardView({
 
             <form onSubmit={handleSubmitProduct} className="p-6 space-y-4">
               {formError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs font-semibold text-red-700 flex items-center gap-2">
+                <div className="p-3 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 rounded-md text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{formError}</span>
                 </div>
@@ -910,7 +954,7 @@ export function AdminDashboardView({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Brand *
                   </label>
                   <input
@@ -919,23 +963,25 @@ export function AdminDashboardView({
                     value={formState.brand}
                     onChange={(e) => setFormState({ ...formState, brand: e.target.value })}
                     placeholder="e.g. JHONTY ORIGINALS"
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">SKU</label>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    SKU
+                  </label>
                   <input
                     type="text"
                     value={formState.sku}
                     onChange={(e) => setFormState({ ...formState, sku: e.target.value })}
                     placeholder="e.g. JH-OS-109"
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm font-mono uppercase focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm font-mono uppercase text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                   Product Title *
                 </label>
                 <input
@@ -944,13 +990,13 @@ export function AdminDashboardView({
                   value={formState.title}
                   onChange={(e) => setFormState({ ...formState, title: e.target.value })}
                   placeholder="e.g. Men Brushed Twill Overshirt"
-                  className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                  className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Department
                   </label>
                   <select
@@ -961,7 +1007,7 @@ export function AdminDashboardView({
                         category: e.target.value as Exclude<Category, 'All'>,
                       })
                     }
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm bg-white focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -972,7 +1018,7 @@ export function AdminDashboardView({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Occasion
                   </label>
                   <select
@@ -980,7 +1026,7 @@ export function AdminDashboardView({
                     onChange={(e) =>
                       setFormState({ ...formState, occasion: e.target.value as Occasion })
                     }
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm bg-white focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     {OCCASIONS.map((o) => (
                       <option key={o} value={o}>
@@ -991,7 +1037,7 @@ export function AdminDashboardView({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Hyderabad Store
                   </label>
                   <select
@@ -999,7 +1045,7 @@ export function AdminDashboardView({
                     onChange={(e) =>
                       setFormState({ ...formState, storeLocation: e.target.value })
                     }
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm bg-white focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     {STORE_LOCATIONS.map((s) => (
                       <option key={s} value={s}>
@@ -1012,7 +1058,7 @@ export function AdminDashboardView({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Price (₹) *
                   </label>
                   <input
@@ -1021,11 +1067,11 @@ export function AdminDashboardView({
                     required
                     value={formState.price}
                     onChange={(e) => setFormState({ ...formState, price: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm tabular-nums focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 tabular-nums focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     MRP (₹)
                   </label>
                   <input
@@ -1033,11 +1079,11 @@ export function AdminDashboardView({
                     min={1}
                     value={formState.mrp}
                     onChange={(e) => setFormState({ ...formState, mrp: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm tabular-nums focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 tabular-nums focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Reorder Level
                   </label>
                   <input
@@ -1045,12 +1091,12 @@ export function AdminDashboardView({
                     min={0}
                     value={formState.reorderLevel}
                     onChange={(e) => setFormState({ ...formState, reorderLevel: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm tabular-nums focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 tabular-nums focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
                 {!formState.id && (
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                    <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                       Qty / Size
                     </label>
                     <input
@@ -1060,7 +1106,7 @@ export function AdminDashboardView({
                       onChange={(e) =>
                         setFormState({ ...formState, defaultSizeQty: e.target.value })
                       }
-                      className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm tabular-nums focus:border-[#faa619] focus:outline-none"
+                      className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 tabular-nums focus:border-[#faa619] focus:outline-none"
                     />
                   </div>
                 )}
@@ -1068,7 +1114,7 @@ export function AdminDashboardView({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Sizes (comma-separated)
                   </label>
                   <input
@@ -1076,18 +1122,18 @@ export function AdminDashboardView({
                     value={formState.sizesText}
                     onChange={(e) => setFormState({ ...formState, sizesText: e.target.value })}
                     placeholder="S, M, L, XL"
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Catalog Image Asset
                   </label>
                   <select
                     value={formState.image}
                     onChange={(e) => setFormState({ ...formState, image: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm bg-white focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   >
                     {IMAGE_PRESETS.map((img) => (
                       <option key={img.path} value={img.path}>
@@ -1100,38 +1146,42 @@ export function AdminDashboardView({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                     Fabric / Material
                   </label>
                   <input
                     type="text"
                     value={formState.fabric}
                     onChange={(e) => setFormState({ ...formState, fabric: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">Fit</label>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Fit
+                  </label>
                   <input
                     type="text"
                     value={formState.fit}
                     onChange={(e) => setFormState({ ...formState, fit: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-neutral-700 mb-1">Care</label>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Care
+                  </label>
                   <input
                     type="text"
                     value={formState.care}
                     onChange={(e) => setFormState({ ...formState, care: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-neutral-700 mb-1">
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                   Description
                 </label>
                 <textarea
@@ -1139,15 +1189,15 @@ export function AdminDashboardView({
                   value={formState.description}
                   onChange={(e) => setFormState({ ...formState, description: e.target.value })}
                   placeholder="Short product description shown on Product Detail & Quick View"
-                  className="w-full p-3 border border-neutral-200 rounded-md text-sm focus:border-[#faa619] focus:outline-none"
+                  className="w-full p-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 placeholder:text-neutral-400 focus:border-[#faa619] focus:outline-none"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-200">
+              <div className="pt-2 flex items-center justify-end gap-3 border-t border-neutral-200 dark:border-neutral-800">
                 <button
                   type="button"
                   onClick={() => setProductModalOpen(false)}
-                  className="h-10 px-4 border border-neutral-300 text-xs font-bold uppercase tracking-wider rounded-md text-neutral-700"
+                  className="h-10 px-4 border border-neutral-300 dark:border-neutral-700 text-xs font-bold uppercase tracking-wider rounded-md text-neutral-700 dark:text-neutral-300"
                 >
                   Cancel
                 </button>
@@ -1166,12 +1216,14 @@ export function AdminDashboardView({
 
       {/* PER-SIZE STOCK ADJUSTER MODAL */}
       {stockModalProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-[1px]">
-          <div className="bg-white rounded-lg border border-neutral-200 w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[1px]">
+          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
               <div>
-                <div className="text-xs font-mono text-neutral-500">{stockModalProduct.sku}</div>
-                <h2 className="text-base font-bold text-neutral-950 line-clamp-1">
+                <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">
+                  {stockModalProduct.sku}
+                </div>
+                <h2 className="text-base font-bold text-neutral-950 dark:text-white line-clamp-1">
                   Adjust Size Stock
                 </h2>
               </div>
@@ -1179,19 +1231,21 @@ export function AdminDashboardView({
                 type="button"
                 onClick={() => setStockModalProduct(null)}
                 aria-label="Close stock adjuster"
-                className="p-1 text-neutral-500 hover:text-neutral-950"
+                className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveSizeStock} className="p-6 space-y-5">
-              <div className="text-sm font-semibold text-neutral-800">
+              <div className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                 {stockModalProduct.brand} — {stockModalProduct.title}
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-neutral-500">Quick add all sizes:</span>
+                <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  Quick add all sizes:
+                </span>
                 {[5, 10, 25].map((delta) => (
                   <button
                     key={delta}
@@ -1203,7 +1257,7 @@ export function AdminDashboardView({
                       });
                       setDraftSizeStock(next);
                     }}
-                    className="px-2.5 py-1 bg-neutral-100 hover:bg-[#faa619] text-xs font-bold rounded-md tabular-nums transition-colors"
+                    className="px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 hover:bg-[#faa619] text-neutral-900 dark:text-neutral-100 hover:text-neutral-950 text-xs font-bold rounded-md tabular-nums transition-colors"
                   >
                     +{delta}
                   </button>
@@ -1214,9 +1268,11 @@ export function AdminDashboardView({
                 {stockModalProduct.sizes.map((size) => (
                   <div
                     key={size}
-                    className="flex items-center justify-between gap-4 p-2.5 bg-neutral-50 border border-neutral-200 rounded-md"
+                    className="flex items-center justify-between gap-4 p-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-md"
                   >
-                    <span className="text-sm font-bold text-neutral-950">Size {size}</span>
+                    <span className="text-sm font-bold text-neutral-950 dark:text-white">
+                      Size {size}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -1226,7 +1282,7 @@ export function AdminDashboardView({
                             [size]: Math.max(0, (prev[size] ?? 0) - 1),
                           }))
                         }
-                        className="w-8 h-8 border border-neutral-300 bg-white rounded-md font-bold text-sm hover:bg-neutral-100"
+                        className="w-8 h-8 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-white rounded-md font-bold text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
                         -
                       </button>
@@ -1241,7 +1297,7 @@ export function AdminDashboardView({
                           }))
                         }
                         aria-label={`Stock for size ${size}`}
-                        className="w-16 h-8 text-center border border-neutral-300 bg-white rounded-md text-sm font-bold tabular-nums focus:border-[#faa619] focus:outline-none"
+                        className="w-16 h-8 text-center border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-white rounded-md text-sm font-bold tabular-nums focus:border-[#faa619] focus:outline-none"
                       />
                       <button
                         type="button"
@@ -1251,7 +1307,7 @@ export function AdminDashboardView({
                             [size]: (prev[size] ?? 0) + 1,
                           }))
                         }
-                        className="w-8 h-8 border border-neutral-300 bg-white rounded-md font-bold text-sm hover:bg-neutral-100"
+                        className="w-8 h-8 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-white rounded-md font-bold text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
                         +
                       </button>
@@ -1260,10 +1316,10 @@ export function AdminDashboardView({
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-neutral-600 pt-2 border-t border-neutral-200 tabular-nums">
+              <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 pt-2 border-t border-neutral-200 dark:border-neutral-800 tabular-nums">
                 <span>New Total Stock</span>
-                <span className="text-sm font-bold text-neutral-950 inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                <span className="text-sm font-bold text-neutral-950 dark:text-white inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                   {Object.values(draftSizeStock).reduce((sum, n) => sum + (Number(n) || 0), 0)}{' '}
                   units
                 </span>
@@ -1273,14 +1329,14 @@ export function AdminDashboardView({
                 <button
                   type="button"
                   onClick={() => setStockModalProduct(null)}
-                  className="h-10 px-4 border border-neutral-300 text-xs font-bold uppercase tracking-wider rounded-md"
+                  className="h-10 px-4 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold uppercase tracking-wider rounded-md"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isBusy}
-                  className="h-10 px-5 bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold uppercase tracking-wider rounded-md disabled:opacity-50"
+                  className="h-10 px-5 bg-neutral-950 dark:bg-[#faa619] hover:bg-neutral-800 dark:hover:bg-[#e6950c] text-white dark:text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md disabled:opacity-50"
                 >
                   Save Stock
                 </button>

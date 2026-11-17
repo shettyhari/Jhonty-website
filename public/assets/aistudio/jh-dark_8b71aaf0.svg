@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512">
+  <title>JH Monogram — Dark Theme</title>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff0a0"/>
+      <stop offset=".35" stop-color="#d99a19"/>
+      <stop offset=".6" stop-color="#ffdc55"/>
+      <stop offset="1" stop-color="#8b5100"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#777777"/>
+      <stop offset=".5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#888888"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#080808"/>
+  <path d="M256 38 438 143V369L256 474 74 369V143Z" fill="none" stroke="#704600" stroke-width="22" stroke-linejoin="round"/>
+  <path d="M256 38 438 143V369L256 474 74 369V143Z" fill="none" stroke="url(#gold)" stroke-width="15" stroke-linejoin="round"/>
+  <path d="M244 105 177 143V190L214 169V365L137 320V270H105V338L244 418Z" fill="url(#gold)" stroke="#5e3900" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M270 105 307 126V243H376V164L408 181V337L376 356V278H307V396L270 418Z" fill="url(#silver)" stroke="#333333" stroke-width="3" stroke-linejoin="round"/>
+</svg>

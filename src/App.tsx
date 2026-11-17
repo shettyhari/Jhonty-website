@@ -45,6 +45,7 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(() => loadStored('jh_products', PRODUCTS));
   const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
   const [isAdminBusy, setIsAdminBusy] = useState<boolean>(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => loadStored('jh_theme', 'light'));
 
   const [bag, setBag] = useState<BagItem[]>(() => loadStored('jh_bag', []));
   const [wishlistIds, setWishlistIds] = useState<number[]>(() => loadStored('jh_wishlist', []));
@@ -98,6 +99,13 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('jh_theme', JSON.stringify(theme));
+    } catch {}
+  }, [theme]);
 
   useEffect(() => {
     try {
@@ -734,15 +742,19 @@ export default function App() {
     STORES_DATA.find((s) => s.id === selectedStoreId) || STORES_DATA[0];
   const bagCount = bag.reduce((s, i) => s + i.qty, 0);
 
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+
   return (
-    <div className="min-h-screen flex flex-col bg-white text-neutral-950">
+    <div className="min-h-screen flex flex-col bg-white text-neutral-950 dark:bg-[#080808] dark:text-neutral-50 transition-colors">
       <Header
+        theme={theme}
         activeCategory={activeCategory}
         activeView={view}
         searchQuery={searchQuery}
         bagCount={bagCount}
         wishlistCount={wishlistIds.length}
         userName={userName}
+        onToggleTheme={toggleTheme}
         onSelectCategory={handleSelectCategory}
         onNavigate={(v) => navigateTo(v)}
         onSearchChange={(q) => {
@@ -864,6 +876,7 @@ export default function App() {
 
         {view === 'tracking' && (
           <OrderTrackingView
+            theme={theme}
             orders={trackingOrders}
             initialOrderId={trackedOrderId}
             onBackHome={() => navigateTo('home')}
@@ -894,6 +907,7 @@ export default function App() {
 
       {view !== 'admin' && (
         <Footer
+          theme={theme}
           onSelectCategory={handleSelectCategory}
           onNavigate={(v) => navigateTo(v)}
           onNotify={showToast}
@@ -901,6 +915,7 @@ export default function App() {
       )}
 
       <Overlays
+        theme={theme}
         bagOpen={bagOpen}
         wishlistOpen={wishlistOpen}
         mobileMenuOpen={mobileMenuOpen}
@@ -911,6 +926,7 @@ export default function App() {
         bag={bag}
         wishlistIds={wishlistIds}
         coupon={coupon}
+        onToggleTheme={toggleTheme}
         onCloseAll={closeAllOverlays}
         onUpdateQty={handleUpdateQty}
         onRemoveBagItem={handleRemoveBagItem}
@@ -932,7 +948,7 @@ export default function App() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 bg-neutral-950 text-white text-xs sm:text-sm font-semibold rounded-md shadow-lg border border-neutral-800 whitespace-nowrap"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 bg-neutral-950 dark:bg-neutral-900 text-white text-xs sm:text-sm font-semibold rounded-md shadow-lg border border-neutral-800 dark:border-neutral-700 whitespace-nowrap"
         >
           {toastMsg}
         </div>
