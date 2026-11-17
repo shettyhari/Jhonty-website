@@ -114,7 +114,7 @@ function sanitizePermissions(
 
 async function startServer() {
   const app = express();
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '10mb' }));
 
   // Health
   app.get('/api/health', (_req, res) => {
@@ -440,8 +440,8 @@ async function startServer() {
         body.description?.trim() ||
         'Curated Jhonty Hub branded menswear piece crafted for everyday comfort and lasting durability.',
       gallery:
-        Array.isArray(body.gallery) && body.gallery.length > 0
-          ? body.gallery
+        Array.isArray(body.gallery) && body.gallery.filter((img) => typeof img === 'string' && img.trim()).length > 0
+          ? body.gallery.map((img) => img.trim()).filter(Boolean)
           : ['/src/assets/images/jhonty_mens_overshirt_1794941649529.jpg'],
     };
 
@@ -490,6 +490,10 @@ async function startServer() {
       }
     });
 
+    const nextGallery = Array.isArray(patch.gallery)
+      ? patch.gallery.map((img) => (typeof img === 'string' ? img.trim() : '')).filter(Boolean)
+      : existing.gallery;
+
     const updated: Product = {
       ...existing,
       ...patch,
@@ -505,6 +509,7 @@ async function startServer() {
       sizes: updatedSizes,
       sizeStock: mergedSizeStock,
       stock: sumSizeStock(mergedSizeStock),
+      gallery: nextGallery.length > 0 ? nextGallery : existing.gallery,
       updatedAt: new Date().toISOString(),
     };
 

@@ -1,11 +1,13 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
   Boxes,
   CheckCircle2,
   Edit3,
+  ImagePlus,
   KeyRound,
+  Link2,
   LogOut,
   MapPin,
   Moon,
@@ -15,8 +17,10 @@ import {
   Search,
   Shield,
   ShoppingBag,
+  Star,
   Sun,
   Trash2,
+  Upload,
   UserPlus,
   Users,
   X,
@@ -129,6 +133,44 @@ function getStockStatus(p: Product): {
   return { key: 'in', label: 'In Stock', textClass: 'text-emerald-700 dark:text-emerald-400' };
 }
 
+function optimizeImageFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+    reader.onload = () => {
+      const rawUrl = String(reader.result || '');
+      if (file.type === 'image/svg+xml' || file.size <= 160 * 1024) {
+        resolve(rawUrl);
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1000;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(rawUrl);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.84);
+        resolve(compressed.length < rawUrl.length ? compressed : rawUrl);
+      };
+      img.onerror = () => resolve(rawUrl);
+      img.src = rawUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 interface ProductFormState {
   id?: number;
   sku: string;
@@ -146,7 +188,7 @@ interface ProductFormState {
   fit: string;
   care: string;
   description: string;
-  image: string;
+  gallery: string[];
 }
 
 const EMPTY_FORM: ProductFormState = {
@@ -165,7 +207,7 @@ const EMPTY_FORM: ProductFormState = {
   fit: 'Regular Fit',
   care: 'Machine Wash Cold',
   description: '',
-  image: IMAGE_PRESETS[0].path,
+  gallery: [IMAGE_PRESETS[0].path],
 };
 
 interface UserFormState {
@@ -293,6 +335,10 @@ export function AdminDashboardView({
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [formState, setFormState] = useState<ProductFormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageProcessing, setImageProcessing] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Per-Size Stock Adjuster Modal
   const [stockModalProduct, setStockModalProduct] = useState<Product | null>(null);
@@ -383,7 +429,9 @@ export function AdminDashboardView({
       ...EMPTY_FORM,
       sku: `JH-MN-${nextNum}`,
       storeLocation: isStoreScoped ? currentUser.assignedStore : 'Hitech City Metro',
+      gallery: [IMAGE_PRESETS[0].path],
     });
+    setImageUrlInput('');
     setFormError(null);
     setProductModalOpen(true);
   };
@@ -406,10 +454,81 @@ export function AdminDashboardView({
       fit: p.fit,
       care: p.care,
       description: p.description,
-      image: p.gallery[0] || IMAGE_PRESETS[0].path,
+      gallery: p.gallery.length > 0 ? [...p.gallery] : [IMAGE_PRESETS[0].path],
     });
+    setImageUrlInput('');
     setFormError(null);
     setProductModalOpen(true);
+  };
+
+  const processUploadedFiles = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const imageFiles = Array.from(fileList).filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      setFormError('Please select valid image files (PNG, JPG, WebP, or SVG).');
+      return;
+    }
+
+    setImageProcessing(true);
+    setFormError(null);
+    try {
+      const encoded = await Promise.all(imageFiles.slice(0, 6).map(optimizeImageFile));
+      setFormState((prev) => {
+        const merged = Array.from(new Set([...encoded, ...prev.gallery])).slice(0, 8);
+        return { ...prev, gallery: merged };
+      });
+    } catch {
+      setFormError('Could not process one of the selected images. Try another file.');
+    } finally {
+      setImageProcessing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    void processUploadedFiles(e.target.files);
+  };
+
+  const handleImageDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingImage(false);
+    void processUploadedFiles(e.dataTransfer.files);
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    const isValid =
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('/') ||
+      trimmed.startsWith('data:image/');
+    if (!isValid) {
+      setFormError('Enter a valid image URL starting with https://, http://, or /');
+      return;
+    }
+    setFormError(null);
+    setFormState((prev) => ({
+      ...prev,
+      gallery: Array.from(new Set([trimmed, ...prev.gallery])).slice(0, 8),
+    }));
+    setImageUrlInput('');
+  };
+
+  const handleSetCoverImage = (idx: number) => {
+    setFormState((prev) => {
+      if (idx <= 0 || idx >= prev.gallery.length) return prev;
+      const selected = prev.gallery[idx];
+      const next = [selected, ...prev.gallery.filter((_, i) => i !== idx)];
+      return { ...prev, gallery: next };
+    });
+  };
+
+  const handleRemoveGalleryImage = (idx: number) => {
+    setFormState((prev) => ({
+      ...prev,
+      gallery: prev.gallery.filter((_, i) => i !== idx),
+    }));
   };
 
   const openStockAdjuster = (p: Product) => {
@@ -489,6 +608,12 @@ export function AdminDashboardView({
       return;
     }
 
+    const cleanGallery = formState.gallery.map((img) => img.trim()).filter(Boolean);
+    if (cleanGallery.length === 0) {
+      setFormError('Add at least one product image (upload a photo, paste a URL, or pick a preset).');
+      return;
+    }
+
     const resolvedMrp = Number.isFinite(mrp) && mrp >= price ? mrp : price * 2;
     const payload: Partial<Product> = {
       sku: formState.sku.trim().toUpperCase(),
@@ -507,7 +632,7 @@ export function AdminDashboardView({
       description:
         formState.description.trim() ||
         'Curated Jhonty Hub branded menswear piece stocked at our Madhapur showroom.',
-      gallery: [formState.image.trim() || IMAGE_PRESETS[0].path],
+      gallery: cleanGallery,
     };
 
     let ok = false;
@@ -2006,36 +2131,216 @@ export function AdminDashboardView({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                    Sizes (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={formState.sizesText}
-                    onChange={(e) => setFormState({ ...formState, sizesText: e.target.value })}
-                    placeholder="S, M, L, XL"
-                    className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
-                  />
+              {/* PRODUCT IMAGES (UPLOAD / URL / PRESET + WEBSITE PREVIEW) */}
+              <div className="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-950/60 space-y-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                      <ImagePlus className="w-4 h-4 text-[#d98200] dark:text-[#faa619]" />
+                      <span>Product Images (Shown on Website)</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Upload a photo from your device, paste an image URL, or pick a studio preset. The first photo is the main product cover on the storefront.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 tabular-nums">
+                    {formState.gallery.length} / 8 photos
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                    Catalog Image Asset
-                  </label>
-                  <select
-                    value={formState.image}
-                    onChange={(e) => setFormState({ ...formState, image: e.target.value })}
-                    className="w-full h-10 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
-                  >
-                    {IMAGE_PRESETS.map((img) => (
-                      <option key={img.path} value={img.path}>
-                        {img.label}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4 items-start">
+                  {/* Live Primary Website Cover Preview */}
+                  <div className="space-y-1.5">
+                    <div className="aspect-[3/4] w-full rounded-md overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 relative">
+                      {formState.gallery[0] ? (
+                        <>
+                          <ResilientImage
+                            src={formState.gallery[0]}
+                            alt={formState.title || 'Primary product cover'}
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-neutral-950/85 text-white text-[10px] font-bold uppercase tracking-wider">
+                            Cover
+                          </span>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 p-3 text-center">
+                          <ImagePlus className="w-6 h-6 mb-1" />
+                          <span className="text-[11px]">No image yet</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-center font-medium text-neutral-500 dark:text-neutral-400">
+                      Storefront Card Preview
+                    </div>
+                  </div>
+
+                  {/* Upload Controls + URL + Preset */}
+                  <div className="space-y-3 min-w-0">
+                    {/* Drag & Drop + File Picker */}
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDraggingImage(true);
+                      }}
+                      onDragLeave={() => setIsDraggingImage(false)}
+                      onDrop={handleImageDrop}
+                      className={`p-3.5 rounded-md border-2 border-dashed transition-colors text-center ${
+                        isDraggingImage
+                          ? 'border-[#faa619] bg-[#fffcf5] dark:bg-neutral-900'
+                          : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900'
+                      }`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                        id="admin-product-image-upload"
+                      />
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                            {imageProcessing ? 'Optimizing photo...' : 'Upload photo from device'}
+                          </div>
+                          <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            Drag &amp; drop PNG, JPG, or WebP here (up to 8 gallery images)
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={imageProcessing}
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-neutral-950 dark:bg-[#faa619] hover:bg-neutral-800 dark:hover:bg-[#e6950c] text-white dark:text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md whitespace-nowrap shrink-0 disabled:opacity-50"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Choose Image</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Paste Image URL */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                        Or add image by URL (https://...)
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1 min-w-0">
+                          <Link2 className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={imageUrlInput}
+                            onChange={(e) => setImageUrlInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddImageUrl();
+                              }
+                            }}
+                            placeholder="https://example.com/product-photo.jpg"
+                            className="w-full h-9 pl-8 pr-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs text-neutral-950 dark:text-neutral-100 placeholder:text-neutral-400 focus:border-[#faa619] focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddImageUrl}
+                          className="h-9 px-3 border border-neutral-300 dark:border-neutral-700 hover:border-[#faa619] bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 text-xs font-bold rounded-md shrink-0"
+                        >
+                          Add URL
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quick Studio Presets */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                        Or choose studio catalog preset
+                      </label>
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const picked = e.target.value;
+                          if (!picked) return;
+                          setFormState((prev) => ({
+                            ...prev,
+                            gallery: Array.from(new Set([picked, ...prev.gallery])).slice(0, 8),
+                          }));
+                        }}
+                        className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded-md text-xs bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                      >
+                        <option value="">+ Select a Jhonty studio preset...</option>
+                        {IMAGE_PRESETS.map((img) => (
+                          <option key={img.path} value={img.path}>
+                            {img.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Gallery Thumbnails Strip */}
+                {formState.gallery.length > 0 && (
+                  <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                    <div className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 mb-2">
+                      Product Gallery ({formState.gallery.length}) — click a thumbnail to make it the Cover image
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {formState.gallery.map((imgSrc, idx) => (
+                        <div
+                          key={`${imgSrc.slice(0, 48)}-${idx}`}
+                          className={`group relative w-16 h-20 rounded-md overflow-hidden border-2 bg-white dark:bg-neutral-900 ${
+                            idx === 0
+                              ? 'border-[#faa619]'
+                              : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-400'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleSetCoverImage(idx)}
+                            title={idx === 0 ? 'Primary Cover Image' : 'Set as Cover Image'}
+                            className="w-full h-full block text-left"
+                          >
+                            <ResilientImage
+                              src={imgSrc}
+                              alt={`Product gallery ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            {idx === 0 && (
+                              <span className="absolute bottom-1 left-1 inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-[#faa619] text-neutral-950 text-[9px] font-extrabold uppercase">
+                                <Star className="w-2.5 h-2.5 fill-current" />
+                                Main
+                              </span>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGalleryImage(idx)}
+                            aria-label={`Remove image ${idx + 1}`}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/75 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                  Sizes (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formState.sizesText}
+                  onChange={(e) => setFormState({ ...formState, sizesText: e.target.value })}
+                  placeholder="S, M, L, XL"
+                  className="w-full h-10 px-3 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-md text-sm text-neutral-950 dark:text-neutral-100 focus:border-[#faa619] focus:outline-none"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

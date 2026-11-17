@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ShoppingBag } from 'lucide-react';
 
 interface ResilientImageProps {
@@ -15,6 +15,10 @@ export function ResilientImage({
   loading = 'eager',
 }: ResilientImageProps) {
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (failed || !src) {
     return (
