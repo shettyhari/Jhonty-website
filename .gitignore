@@ -6,3 +6,4 @@ coverage/
 *.log
 .env*
 !.env.example
+.jhonty_db.json
