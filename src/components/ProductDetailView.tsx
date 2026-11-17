@@ -1,12 +1,13 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { CheckCircle2, Heart, Ruler, ShieldCheck, Star, Truck } from 'lucide-react';
-import { PRODUCTS, formatINR } from '../data/catalog';
+import { formatINR } from '../data/catalog';
 import { Category, Product } from '../types';
 import { ProductCard } from './ProductCard';
 import { ResilientImage } from './ResilientImage';
 
 interface ProductDetailViewProps {
   product: Product;
+  allProducts: Product[];
   isWishlisted: boolean;
   wishlistIds: number[];
   onNavigateHome: () => void;
@@ -21,6 +22,7 @@ interface ProductDetailViewProps {
 
 export function ProductDetailView({
   product,
+  allProducts,
   isWishlisted,
   wishlistIds,
   onNavigateHome,
@@ -32,9 +34,11 @@ export function ProductDetailView({
   onBuyNow,
   onOpenSizeGuide,
 }: ProductDetailViewProps) {
+  const firstAvailableSize =
+    product.sizes.find((s) => (product.sizeStock?.[s] ?? 0) > 0) || product.sizes[0];
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [selectedColorIdx, setSelectedColorIdx] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
+  const [selectedSize, setSelectedSize] = useState(firstAvailableSize);
   const [pincode, setPincode] = useState('');
   const [pincodeMessage, setPincodeMessage] = useState<{
     ok: boolean;
@@ -44,15 +48,19 @@ export function ProductDetailView({
   useEffect(() => {
     setGalleryIdx(0);
     setSelectedColorIdx(0);
-    setSelectedSize(product.sizes[0]);
+    const nextFirst =
+      product.sizes.find((s) => (product.sizeStock?.[s] ?? 0) > 0) || product.sizes[0];
+    setSelectedSize(nextFirst);
     setPincodeMessage(null);
-  }, [product.id, product.sizes]);
+  }, [product.id, product.sizes, product.sizeStock]);
 
   const discountPct = Math.round(((product.mrp - product.price) / product.mrp) * 100);
   const selectedColor = product.colors[selectedColorIdx] || product.colors[0];
   const rewardPoints = Math.max(10, Math.round(product.price / 20));
+  const selectedSizeQty = product.sizeStock?.[selectedSize] ?? 0;
 
-  const relatedProducts = PRODUCTS.filter((p) => p.id !== product.id)
+  const relatedProducts = allProducts
+    .filter((p) => p.id !== product.id)
     .sort((a, b) => (a.category === product.category ? -1 : 1) - (b.category === product.category ? -1 : 1))
     .slice(0, 4);
 
@@ -206,6 +214,19 @@ export function ProductDetailView({
               <div className="flex items-center justify-between mb-2.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
                   Size: <span className="text-neutral-950">{selectedSize}</span>
+                  <span
+                    className={`ml-2 normal-case font-semibold tabular-nums ${
+                      selectedSizeQty <= 0
+                        ? 'text-red-600'
+                        : selectedSizeQty <= 3
+                        ? 'text-amber-700'
+                        : 'text-emerald-700'
+                    }`}
+                  >
+                    {selectedSizeQty <= 0
+                      ? 'Out of Stock'
+                      : `${selectedSizeQty} available at ${product.storeLocation}`}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -217,20 +238,26 @@ export function ProductDetailView({
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-w-[52px] h-10 px-3.5 text-sm font-semibold rounded-md border transition-colors ${
-                      selectedSize === size
-                        ? 'bg-neutral-950 text-white border-neutral-950'
-                        : 'bg-white text-neutral-900 border-neutral-300 hover:border-neutral-950'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+                {product.sizes.map((size) => {
+                  const qty = product.sizeStock?.[size] ?? 0;
+                  const soldOut = qty <= 0;
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className={`min-w-[52px] h-10 px-3.5 text-sm font-semibold rounded-md border transition-colors ${
+                        selectedSize === size
+                          ? 'bg-neutral-950 text-white border-neutral-950'
+                          : soldOut
+                          ? 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
+                          : 'bg-white text-neutral-900 border-neutral-300 hover:border-neutral-950'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -238,15 +265,17 @@ export function ProductDetailView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <button
                 type="button"
+                disabled={selectedSizeQty <= 0}
                 onClick={() => onAddToBag(product, selectedSize, selectedColor.name)}
-                className="h-12 px-6 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
+                className="h-12 px-6 bg-[#faa619] hover:bg-[#e6950c] disabled:bg-neutral-200 disabled:text-neutral-500 text-neutral-950 text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
               >
-                Add To Basket
+                {selectedSizeQty <= 0 ? 'Size Out of Stock' : 'Add To Basket'}
               </button>
               <button
                 type="button"
+                disabled={selectedSizeQty <= 0}
                 onClick={() => onBuyNow(product, selectedSize, selectedColor.name)}
-                className="h-12 px-6 bg-neutral-950 hover:bg-neutral-800 text-white text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
+                className="h-12 px-6 bg-neutral-950 hover:bg-neutral-800 disabled:bg-neutral-300 text-white text-sm font-bold uppercase tracking-wider rounded-md transition-colors"
               >
                 Buy Now
               </button>
@@ -364,15 +393,17 @@ export function ProductDetailView({
         <div className="flex items-center gap-2 flex-1 max-w-[260px]">
           <button
             type="button"
+            disabled={selectedSizeQty <= 0}
             onClick={() => onAddToBag(product, selectedSize, selectedColor.name)}
-            className="flex-1 h-11 bg-[#faa619] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
+            className="flex-1 h-11 bg-[#faa619] disabled:bg-neutral-200 disabled:text-neutral-500 text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
           >
-            Add Basket
+            {selectedSizeQty <= 0 ? 'Sold Out' : 'Add Basket'}
           </button>
           <button
             type="button"
+            disabled={selectedSizeQty <= 0}
             onClick={() => onBuyNow(product, selectedSize, selectedColor.name)}
-            className="flex-1 h-11 bg-neutral-950 text-white text-xs font-bold uppercase tracking-wider rounded-md"
+            className="flex-1 h-11 bg-neutral-950 disabled:bg-neutral-300 text-white text-xs font-bold uppercase tracking-wider rounded-md"
           >
             Buy Now
           </button>

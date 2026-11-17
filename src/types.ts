@@ -7,12 +7,13 @@ export type Category =
   | 'Accessories';
 
 export type Occasion = 'Workwear' | 'Festive' | 'Casual' | 'Active';
-export type ViewMode = 'home' | 'pdp' | 'stores' | 'checkout' | 'tracking';
+export type ViewMode = 'home' | 'pdp' | 'stores' | 'checkout' | 'tracking' | 'admin';
 export type DeliveryMode = 'home' | 'pickup';
 export type PaymentMode = 'upi' | 'card' | 'netbanking' | 'cod';
 
 export interface Product {
   id: number;
+  sku: string;
   brand: string;
   title: string;
   category: Exclude<Category, 'All'>;
@@ -22,6 +23,11 @@ export interface Product {
   rating: string;
   reviews: number;
   sizes: string[];
+  stock: number;
+  sizeStock: Record<string, number>;
+  reorderLevel: number;
+  storeLocation: string;
+  updatedAt: string;
   colors: { name: string; hex: string }[];
   fabric: string;
   fit: string;

@@ -74,6 +74,7 @@ export const FEATURED_BRANDS = [
 export const PRODUCTS: Product[] = [
   {
     id: 1,
+    sku: 'JH-OS-101',
     brand: 'JHONTY ORIGINALS',
     title: 'Men Olive & Charcoal Brushed Cotton Plaid Overshirt',
     category: 'Shirts & Polos',
@@ -83,6 +84,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.8',
     reviews: 342,
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    sizeStock: { S: 12, M: 18, L: 14, XL: 9, XXL: 6 },
+    stock: 59,
+    reorderLevel: 12,
+    storeLocation: 'Hitech City Metro',
+    updatedAt: '2026-11-16T10:30:00.000Z',
     colors: [
       { name: 'Olive Charcoal', hex: '#4d5d42' },
       { name: 'Rust Slate', hex: '#7c2d12' },
@@ -101,6 +107,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 2,
+    sku: 'JH-OW-102',
     brand: 'JACK & JONES',
     title: 'Men Matte Black Structured Utility Bomber Jacket',
     category: 'Outerwear',
@@ -110,6 +117,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.7',
     reviews: 215,
     sizes: ['S', 'M', 'L', 'XL'],
+    sizeStock: { S: 1, M: 2, L: 2, XL: 1 },
+    stock: 6,
+    reorderLevel: 10,
+    storeLocation: 'Hitech City Metro',
+    updatedAt: '2026-11-16T09:15:00.000Z',
     colors: [
       { name: 'Matte Black', hex: '#18181b' },
       { name: 'Olive Drab', hex: '#3f4a3c' },
@@ -124,6 +136,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 3,
+    sku: 'JH-DN-103',
     brand: 'RARE RABBIT',
     title: 'Men Ivory Linen Mandarin Shirt & Tapered Denim Pairing',
     category: 'Denim & Chinos',
@@ -133,6 +146,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.6',
     reviews: 189,
     sizes: ['30', '32', '34', '36'],
+    sizeStock: { '30': 8, '32': 14, '34': 12, '36': 6 },
+    stock: 40,
+    reorderLevel: 10,
+    storeLocation: 'Venkata Ramana Colony',
+    updatedAt: '2026-11-15T18:20:00.000Z',
     colors: [
       { name: 'Mid-Wash Indigo', hex: '#1d4ed8' },
       { name: 'Dark Rinse', hex: '#172554' },
@@ -147,6 +165,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 4,
+    sku: 'JH-FS-104',
     brand: 'U.S. POLO ASSN.',
     title: 'Men Tailored Slim Fit Two-Ply Giza Cotton Formal Shirt',
     category: 'Shirts & Polos',
@@ -156,6 +175,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.6',
     reviews: 310,
     sizes: ['38', '40', '42', '44'],
+    sizeStock: { '38': 10, '40': 16, '42': 11, '44': 5 },
+    stock: 42,
+    reorderLevel: 10,
+    storeLocation: 'Hitech City Metro',
+    updatedAt: '2026-11-16T11:05:00.000Z',
     colors: [
       { name: 'Powder Sky', hex: '#93c5fd' },
       { name: 'Crisp White', hex: '#f8fafc' },
@@ -171,6 +195,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 5,
+    sku: 'JH-PL-105',
     brand: 'TOMMY HILFIGER',
     title: 'Men Solid Combed Cotton Pique Regular Fit Polo',
     category: 'Shirts & Polos',
@@ -180,6 +205,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.7',
     reviews: 425,
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    sizeStock: { S: 14, M: 22, L: 19, XL: 12, XXL: 8 },
+    stock: 75,
+    reorderLevel: 15,
+    storeLocation: 'Kukatpally Hub',
+    updatedAt: '2026-11-15T14:00:00.000Z',
     colors: [
       { name: 'Classic Navy', hex: '#1e293b' },
       { name: 'Crimson Red', hex: '#b91c1c' },
@@ -195,6 +225,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 6,
+    sku: 'JH-OW-106',
     brand: "LEVI'S",
     title: 'Men Olive Field Overshirt & Raw Selvedge Denim Edit',
     category: 'Outerwear',
@@ -204,6 +235,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.8',
     reviews: 274,
     sizes: ['S', 'M', 'L', 'XL'],
+    sizeStock: { S: 7, M: 11, L: 9, XL: 5 },
+    stock: 32,
+    reorderLevel: 10,
+    storeLocation: 'Venkata Ramana Colony',
+    updatedAt: '2026-11-16T08:40:00.000Z',
     colors: [
       { name: 'Army Olive', hex: '#3f6212' },
       { name: 'Charcoal Stone', hex: '#3f3f46' },
@@ -218,6 +254,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 7,
+    sku: 'JH-FW-107',
     brand: 'ADIDAS',
     title: 'Men Stride Foamcell Cushioned Running Sneakers',
     category: 'Footwear',
@@ -227,6 +264,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.7',
     reviews: 512,
     sizes: ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10'],
+    sizeStock: { 'UK 6': 1, 'UK 7': 2, 'UK 8': 3, 'UK 9': 2, 'UK 10': 0 },
+    stock: 8,
+    reorderLevel: 12,
+    storeLocation: 'Kukatpally Hub',
+    updatedAt: '2026-11-16T12:10:00.000Z',
     colors: [
       { name: 'Crimson / Black', hex: '#991b1b' },
       { name: 'Obsidian Black', hex: '#18181b' },
@@ -241,6 +283,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 8,
+    sku: 'JH-AC-108',
     brand: 'CALVIN KLEIN',
     title: 'Structured Cognac Vegan Leather Executive Work Tote',
     category: 'Accessories',
@@ -250,6 +293,11 @@ export const PRODUCTS: Product[] = [
     rating: '4.5',
     reviews: 133,
     sizes: ['One Size'],
+    sizeStock: { 'One Size': 16 },
+    stock: 16,
+    reorderLevel: 6,
+    storeLocation: 'Hitech City Metro',
+    updatedAt: '2026-11-15T16:45:00.000Z',
     colors: [
       { name: 'Warm Cognac', hex: '#9a5b25' },
       { name: 'Espresso Black', hex: '#1c1917' },

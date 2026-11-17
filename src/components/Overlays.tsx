@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Trash2, X } from 'lucide-react';
-import { PRODUCTS, formatINR } from '../data/catalog';
+import { formatINR } from '../data/catalog';
 import { BagItem, Category, Product, ViewMode } from '../types';
 import { BrandLogo } from './BrandLogo';
 import { ResilientImage } from './ResilientImage';
@@ -12,6 +12,7 @@ interface OverlaysProps {
   authOpen: boolean;
   sizeGuideOpen: boolean;
   quickViewProduct: Product | null;
+  products: Product[];
   bag: BagItem[];
   wishlistIds: number[];
   coupon: string | null;
@@ -35,6 +36,7 @@ export function Overlays({
   authOpen,
   sizeGuideOpen,
   quickViewProduct,
+  products,
   bag,
   wishlistIds,
   coupon,
@@ -56,7 +58,10 @@ export function Overlays({
 
   useEffect(() => {
     if (quickViewProduct) {
-      setQvSize(quickViewProduct.sizes[0]);
+      const firstInStock =
+        quickViewProduct.sizes.find((s) => (quickViewProduct.sizeStock[s] ?? 0) > 0) ||
+        quickViewProduct.sizes[0];
+      setQvSize(firstInStock);
     }
   }, [quickViewProduct]);
 
@@ -80,7 +85,7 @@ export function Overlays({
   if (coupon === 'JH1000' && subtotal >= 3999) discount = 1000;
   const total = Math.max(0, subtotal - discount);
 
-  const wishlistProducts = PRODUCTS.filter((p) => wishlistIds.includes(p.id));
+  const wishlistProducts = products.filter((p) => wishlistIds.includes(p.id));
 
   const handleAuthSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -147,6 +152,16 @@ export function Overlays({
               className="text-left py-3.5 text-base font-semibold text-neutral-900 hover:text-[#d98200]"
             >
               Track Order
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate('admin');
+                onCloseAll();
+              }}
+              className="text-left py-3.5 text-base font-semibold text-[#d98200] hover:text-neutral-950"
+            >
+              Admin Console
             </button>
           </nav>
         </aside>
@@ -414,24 +429,43 @@ export function Overlays({
                 </p>
 
                 <div>
-                  <div className="text-xs font-bold text-neutral-700 mb-2">
-                    Select Size: {qvSize}
+                  <div className="flex items-center justify-between text-xs font-bold text-neutral-700 mb-2">
+                    <span>Select Size: {qvSize}</span>
+                    <span
+                      className={`tabular-nums ${
+                        (quickViewProduct.sizeStock[qvSize] ?? 0) === 0
+                          ? 'text-red-600'
+                          : (quickViewProduct.sizeStock[qvSize] ?? 0) <= 3
+                          ? 'text-amber-700'
+                          : 'text-emerald-700'
+                      }`}
+                    >
+                      {(quickViewProduct.sizeStock[qvSize] ?? 0) === 0
+                        ? 'Out of Stock'
+                        : `${quickViewProduct.sizeStock[qvSize]} left`}
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {quickViewProduct.sizes.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setQvSize(s)}
-                        className={`min-w-[44px] h-9 px-3 text-xs font-semibold rounded-md border ${
-                          qvSize === s
-                            ? 'bg-neutral-950 text-white border-neutral-950'
-                            : 'bg-white text-neutral-900 border-neutral-300'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    ))}
+                    {quickViewProduct.sizes.map((s) => {
+                      const qtyLeft = quickViewProduct.sizeStock[s] ?? 0;
+                      const soldOut = qtyLeft <= 0;
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setQvSize(s)}
+                          className={`min-w-[44px] h-9 px-3 text-xs font-semibold rounded-md border ${
+                            qvSize === s
+                              ? 'bg-neutral-950 text-white border-neutral-950'
+                              : soldOut
+                              ? 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
+                              : 'bg-white text-neutral-900 border-neutral-300'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -439,13 +473,16 @@ export function Overlays({
               <div className="space-y-2 pt-2">
                 <button
                   type="button"
+                  disabled={(quickViewProduct.sizeStock[qvSize] ?? 0) <= 0}
                   onClick={() => {
                     onAddToBag(quickViewProduct, qvSize || quickViewProduct.sizes[0]);
                     onCloseAll();
                   }}
-                  className="w-full h-11 bg-[#faa619] hover:bg-[#e6950c] text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
+                  className="w-full h-11 bg-[#faa619] hover:bg-[#e6950c] disabled:bg-neutral-200 disabled:text-neutral-500 text-neutral-950 text-xs font-bold uppercase tracking-wider rounded-md"
                 >
-                  Add To Basket
+                  {(quickViewProduct.sizeStock[qvSize] ?? 0) <= 0
+                    ? 'Out of Stock in Selected Size'
+                    : 'Add To Basket'}
                 </button>
                 <button
                   type="button"

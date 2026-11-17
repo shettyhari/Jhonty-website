@@ -21,6 +21,10 @@ export function ProductCard({
   onAddToBag,
 }: ProductCardProps) {
   const discountPct = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+  const firstAvailableSize =
+    product.sizes.find((s) => (product.sizeStock?.[s] ?? 0) > 0) || product.sizes[0];
+  const isOutOfStock = product.stock <= 0;
+  const isLowStock = product.stock > 0 && product.stock <= product.reorderLevel;
 
   return (
     <article className="group bg-white border border-neutral-200 rounded-lg overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -32,7 +36,9 @@ export function ProductCard({
           src={product.gallery[0]}
           alt={`${product.brand} ${product.title}`}
           loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03] ${
+            isOutOfStock ? 'opacity-65 grayscale-[30%]' : ''
+          }`}
         />
 
         <button
@@ -70,22 +76,32 @@ export function ProductCard({
         <button
           type="button"
           onClick={() => onOpenProduct(product.id)}
-          className="text-left text-[15px] font-semibold text-neutral-950 hover:text-[#d98200] transition-colors line-clamp-2 min-h-[42px] mb-3"
+          className="text-left text-[15px] font-semibold text-neutral-950 hover:text-[#d98200] transition-colors line-clamp-2 min-h-[42px] mb-2"
         >
           {product.title}
         </button>
 
-        <div className="flex items-baseline gap-2 mb-3.5 tabular-nums">
-          <span className="text-base font-bold text-neutral-950">{formatINR(product.price)}</span>
-          <span className="text-xs text-neutral-400 line-through">{formatINR(product.mrp)}</span>
+        <div className="flex items-baseline justify-between gap-2 mb-3.5 tabular-nums">
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-bold text-neutral-950">{formatINR(product.price)}</span>
+            <span className="text-xs text-neutral-400 line-through">{formatINR(product.mrp)}</span>
+          </div>
+          {isOutOfStock ? (
+            <span className="text-[11px] font-bold text-red-600">Out of Stock</span>
+          ) : isLowStock ? (
+            <span className="text-[11px] font-semibold text-amber-700">
+              Only {product.stock} left
+            </span>
+          ) : null}
         </div>
 
         <button
           type="button"
-          onClick={() => onAddToBag(product, product.sizes[0])}
-          className="mt-auto w-full py-2.5 px-4 border border-neutral-950 bg-white text-neutral-950 hover:bg-[#faa619] hover:border-[#faa619] text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+          disabled={isOutOfStock}
+          onClick={() => onAddToBag(product, firstAvailableSize)}
+          className="mt-auto w-full py-2.5 px-4 border border-neutral-950 bg-white text-neutral-950 hover:bg-[#faa619] hover:border-[#faa619] disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-400 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
         >
-          Add To Basket
+          {isOutOfStock ? 'Out of Stock' : 'Add To Basket'}
         </button>
       </div>
     </article>

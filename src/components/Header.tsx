@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Heart, MapPin, Menu, Package, Search, ShoppingBag, User, X } from 'lucide-react';
+import {
+  Heart,
+  LayoutDashboard,
+  MapPin,
+  Menu,
+  Package,
+  Search,
+  ShoppingBag,
+  User,
+  X,
+} from 'lucide-react';
 import { Category, ViewMode } from '../types';
 import { BrandLogo } from './BrandLogo';
 
@@ -83,6 +93,14 @@ export function Header({
             </button>
             <button
               type="button"
+              onClick={() => onNavigate('admin')}
+              className="hidden sm:inline-flex items-center gap-1 text-[#faa619] hover:text-white font-semibold transition-colors whitespace-nowrap"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setPromoDismissed(true)}
               aria-label="Dismiss announcement"
               className="text-neutral-400 hover:text-white p-1"
@@ -161,6 +179,18 @@ export function Header({
               }`}
             >
               Track Order
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('admin')}
+              className={`h-full inline-flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap shrink-0 border-b-2 transition-colors ${
+                activeView === 'admin'
+                  ? 'text-[#d98200] border-[#faa619]'
+                  : 'text-neutral-800 border-transparent hover:text-[#d98200]'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin</span>
             </button>
           </nav>
 

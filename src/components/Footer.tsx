@@ -142,6 +142,15 @@ export function Footer({ onSelectCategory, onNavigate, onNotify }: FooterProps) 
                     Hitech City Click &amp; Collect
                   </button>
                 </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('admin')}
+                    className="hover:text-[#d98200] font-semibold text-neutral-800"
+                  >
+                    Admin Inventory Panel
+                  </button>
+                </li>
               </ul>
             </div>
 

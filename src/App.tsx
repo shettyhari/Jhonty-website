@@ -20,6 +20,7 @@ import { ProductDetailView } from './components/ProductDetailView';
 import { StoreLocatorView } from './components/StoreLocatorView';
 import { CheckoutView } from './components/CheckoutView';
 import { OrderTrackingView } from './components/OrderTrackingView';
+import { AdminDashboardView } from './components/AdminDashboardView';
 import { Overlays } from './components/Overlays';
 import { Footer } from './components/Footer';
 
@@ -41,6 +42,10 @@ export default function App() {
   const [activeOccasion, setActiveOccasion] = useState<Occasion | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [products, setProducts] = useState<Product[]>(() => loadStored('jh_products', PRODUCTS));
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
+  const [isAdminBusy, setIsAdminBusy] = useState<boolean>(false);
+
   const [bag, setBag] = useState<BagItem[]>(() => loadStored('jh_bag', []));
   const [wishlistIds, setWishlistIds] = useState<number[]>(() => loadStored('jh_wishlist', []));
   const [selectedStoreId, setSelectedStoreId] = useState<string>(() =>
@@ -60,6 +65,45 @@ export default function App() {
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Hydrate products & orders from backend API on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function hydrateFromServer() {
+      try {
+        const [prodRes, ordRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/orders'),
+        ]);
+        if (!cancelled && prodRes.ok) {
+          const prodData = (await prodRes.json()) as { products?: Product[] };
+          if (Array.isArray(prodData.products)) {
+            setProducts(prodData.products);
+          }
+        }
+        if (!cancelled && ordRes.ok) {
+          const ordData = (await ordRes.json()) as { orders?: OrderTrackingRecord[] };
+          if (Array.isArray(ordData.orders)) {
+            setTrackingOrders(ordData.orders);
+          }
+        }
+      } catch {
+        // Fallback gracefully to locally cached state
+      } finally {
+        if (!cancelled) setIsLoadingData(false);
+      }
+    }
+    hydrateFromServer();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('jh_products', JSON.stringify(products));
+    } catch {}
+  }, [products]);
 
   useEffect(() => {
     try {
@@ -96,7 +140,7 @@ export default function App() {
       const h = window.location.hash;
       if (h.startsWith('#product/')) {
         const id = Number(h.split('/')[1]);
-        if (PRODUCTS.some((p) => p.id === id)) {
+        if (Number.isFinite(id) && id > 0) {
           setActiveProductId(id);
           setView('pdp');
         }
@@ -106,6 +150,8 @@ export default function App() {
         setView('checkout');
       } else if (h === '#tracking') {
         setView('tracking');
+      } else if (h === '#admin') {
+        setView('admin');
       } else {
         setView('home');
       }
@@ -143,6 +189,8 @@ export default function App() {
       window.history.replaceState(null, '', '#checkout');
     } else if (nextView === 'tracking') {
       window.history.replaceState(null, '', '#tracking');
+    } else if (nextView === 'admin') {
+      window.history.replaceState(null, '', '#admin');
     } else {
       window.history.replaceState(null, '', '#home');
     }
@@ -184,7 +232,7 @@ export default function App() {
   };
 
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       if (activeCategory !== 'All' && p.category !== activeCategory) return false;
       if (activeBrand && p.brand.toLowerCase() !== activeBrand.toLowerCase()) return false;
       if (activeMaxPrice && p.price > activeMaxPrice) return false;
@@ -194,18 +242,28 @@ export default function App() {
         const match =
           p.title.toLowerCase().includes(q) ||
           p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q);
+          p.category.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q);
         if (!match) return false;
       }
       return true;
     });
-  }, [activeCategory, activeBrand, activeMaxPrice, activeOccasion, searchQuery]);
+  }, [products, activeCategory, activeBrand, activeMaxPrice, activeOccasion, searchQuery]);
 
   const handleAddToBag = (product: Product, size: string, colorName?: string) => {
-    const resolvedColor = colorName || product.colors[0].name;
+    const available = product.sizeStock?.[size] ?? product.stock;
+    if (available <= 0) {
+      showToast(`Size ${size} is currently out of stock`);
+      return;
+    }
+    const resolvedColor = colorName || product.colors[0]?.name || 'Signature';
     setBag((prev) => {
       const idx = prev.findIndex((i) => i.id === product.id && i.size === size);
       if (idx > -1) {
+        if (prev[idx].qty >= available) {
+          showToast(`Max available stock (${available}) reached for size ${size}`);
+          return prev;
+        }
         return prev.map((item, i) => (i === idx ? { ...item, qty: item.qty + 1 } : item));
       }
       return [
@@ -272,16 +330,181 @@ export default function App() {
     navigateTo('checkout');
   };
 
-  const handleCompleteOrder = (receipt: OrderReceipt) => {
-    const record = buildTrackingFromReceipt(receipt);
-    setTrackingOrders((prev) => [record, ...prev]);
+  const handleCompleteOrder = async (receipt: OrderReceipt) => {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(receipt),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          order: OrderTrackingRecord;
+          products: Product[];
+        };
+        setTrackingOrders((prev) => [data.order, ...prev]);
+        setProducts(data.products);
+      } else {
+        const fallback = buildTrackingFromReceipt(receipt);
+        setTrackingOrders((prev) => [fallback, ...prev]);
+      }
+    } catch {
+      const fallback = buildTrackingFromReceipt(receipt);
+      setTrackingOrders((prev) => [fallback, ...prev]);
+    }
     setTrackedOrderId(receipt.orderId);
     setBag([]);
     setCoupon(null);
     showToast(`Order ${receipt.orderId} confirmed!`);
   };
 
-  const activeProduct = PRODUCTS.find((p) => p.id === activeProductId) || PRODUCTS[0];
+  // Admin Backend Handlers
+  const handleCreateProduct = async (payload: Partial<Product>): Promise<boolean> => {
+    setIsAdminBusy(true);
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Could not create product');
+        return false;
+      }
+      const data = (await res.json()) as { product: Product };
+      setProducts((prev) => [data.product, ...prev]);
+      showToast(`Created ${data.product.sku} (${data.product.brand})`);
+      return true;
+    } catch {
+      showToast('Backend unreachable while creating product');
+      return false;
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleUpdateProduct = async (id: number, patch: Partial<Product>): Promise<boolean> => {
+    setIsAdminBusy(true);
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        showToast(err.error || 'Could not update product');
+        return false;
+      }
+      const data = (await res.json()) as { product: Product };
+      setProducts((prev) => prev.map((p) => (p.id === id ? data.product : p)));
+      showToast(`Updated ${data.product.sku}`);
+      return true;
+    } catch {
+      showToast('Backend unreachable while updating product');
+      return false;
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleRestockProduct = async (
+    id: number,
+    payload: { deltaPerSize?: number; sizeStock?: Record<string, number> }
+  ): Promise<boolean> => {
+    setIsAdminBusy(true);
+    try {
+      const res = await fetch(`/api/products/${id}/restock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        showToast('Failed to update stock');
+        return false;
+      }
+      const data = (await res.json()) as { product: Product };
+      setProducts((prev) => prev.map((p) => (p.id === id ? data.product : p)));
+      showToast(`Stock updated for ${data.product.sku}: ${data.product.stock} units`);
+      return true;
+    } catch {
+      showToast('Backend unreachable while restocking');
+      return false;
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleRefreshInventory = async (minPerSize = 10) => {
+    setIsAdminBusy(true);
+    try {
+      const res = await fetch('/api/products/refresh-inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minPerSize }),
+      });
+      if (!res.ok) {
+        showToast('Failed to refresh low stock');
+        return;
+      }
+      const data = (await res.json()) as { products: Product[]; refreshedCount: number };
+      setProducts(data.products);
+      showToast(
+        data.refreshedCount > 0
+          ? `Replenished ${data.refreshedCount} low-stock SKU(s) to ${minPerSize}+ per size`
+          : 'All SKUs already meet minimum stock levels'
+      );
+    } catch {
+      showToast('Backend unreachable while refreshing stock');
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    setIsAdminBusy(true);
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        showToast('Failed to delete product');
+        return;
+      }
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      showToast('Removed product from catalog');
+    } catch {
+      showToast('Backend unreachable while deleting product');
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (
+    orderId: string,
+    status: OrderTrackingRecord['status']
+  ) => {
+    setIsAdminBusy(true);
+    try {
+      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        showToast('Could not update order status');
+        return;
+      }
+      const data = (await res.json()) as { order: OrderTrackingRecord };
+      setTrackingOrders((prev) => prev.map((o) => (o.orderId === orderId ? data.order : o)));
+      showToast(`Order ${orderId} set to "${status}"`);
+    } catch {
+      showToast('Backend unreachable while updating order');
+    } finally {
+      setIsAdminBusy(false);
+    }
+  };
+
+  const activeProduct = products.find((p) => p.id === activeProductId) || products[0];
   const selectedStore: StoreLocation =
     STORES_DATA.find((s) => s.id === selectedStoreId) || STORES_DATA[0];
   const bagCount = bag.reduce((s, i) => s + i.qty, 0);
@@ -333,7 +556,7 @@ export default function App() {
         {view === 'home' && (
           <HomeView
             products={filteredProducts}
-            allProductCount={PRODUCTS.length}
+            allProductCount={products.length}
             activeCategory={activeCategory}
             activeBrand={activeBrand}
             activeMaxPrice={activeMaxPrice}
@@ -357,9 +580,10 @@ export default function App() {
           />
         )}
 
-        {view === 'pdp' && (
+        {view === 'pdp' && activeProduct && (
           <ProductDetailView
             product={activeProduct}
+            allProducts={products}
             isWishlisted={wishlistIds.includes(activeProduct.id)}
             wishlistIds={wishlistIds}
             onNavigateHome={() => navigateTo('home')}
@@ -420,13 +644,36 @@ export default function App() {
             onBackHome={() => navigateTo('home')}
           />
         )}
+
+        {view === 'admin' && (
+          <AdminDashboardView
+            products={products}
+            orders={trackingOrders}
+            isLoading={isLoadingData}
+            isBusy={isAdminBusy}
+            onCreateProduct={handleCreateProduct}
+            onUpdateProduct={handleUpdateProduct}
+            onRestockProduct={handleRestockProduct}
+            onRefreshInventory={handleRefreshInventory}
+            onDeleteProduct={handleDeleteProduct}
+            onUpdateOrderStatus={handleUpdateOrderStatus}
+            onTrackOrder={(id) => {
+              setTrackedOrderId(id);
+              navigateTo('tracking');
+            }}
+            onOpenProduct={(id) => navigateTo('pdp', id)}
+            onBackToStore={() => navigateTo('home')}
+          />
+        )}
       </div>
 
-      <Footer
-        onSelectCategory={handleSelectCategory}
-        onNavigate={(v) => navigateTo(v)}
-        onNotify={showToast}
-      />
+      {view !== 'admin' && (
+        <Footer
+          onSelectCategory={handleSelectCategory}
+          onNavigate={(v) => navigateTo(v)}
+          onNotify={showToast}
+        />
+      )}
 
       <Overlays
         bagOpen={bagOpen}
@@ -435,6 +682,7 @@ export default function App() {
         authOpen={authOpen}
         sizeGuideOpen={sizeGuideOpen}
         quickViewProduct={quickViewProduct}
+        products={products}
         bag={bag}
         wishlistIds={wishlistIds}
         coupon={coupon}
